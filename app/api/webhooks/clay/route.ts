@@ -14,15 +14,22 @@ export async function POST(req: Request) {
     console.log('Received Clay Webhook:', payload);
 
     // Clay will need to send back the domain so we can match it.
-    let domain = payload.domain || payload.Domain;
+    // In a Clay Export, the keys match the column names exactly.
+    let rawDomain = payload.domain || payload.Domain || payload.website || payload.Website;
+    
+    // Sometimes Clay nests the row data inside a 'rows' array or 'data' object depending on export type
+    if (!rawDomain && payload.rows && payload.rows.length > 0) {
+      const row = payload.rows[0];
+      rawDomain = row.domain || row.Domain || row.website || row.Website;
+    }
 
-    if (!domain) {
-      console.error('Webhook Error: Missing domain in payload');
+    if (!rawDomain) {
+      console.error('Webhook Error: Missing domain/website in payload', payload);
       return NextResponse.json({ error: 'Missing domain' }, { status: 400 });
     }
 
     // Clean the domain: remove http://, https://, www., and trailing slashes
-    domain = domain.replace(/^(?:https?:\/\/)?(?:www\.)?/i, '').split('/')[0];
+    let domain = typeof rawDomain === 'string' ? rawDomain.replace(/^(?:https?:\/\/)?(?:www\.)?/i, '').split('/')[0] : '';
 
     // Store the raw enriched data in the company's raw_data column
     const { error: updateError } = await supabaseAdmin

@@ -45,6 +45,41 @@ export function CompanyIntelligenceReport({ companyName, researchData, rawData }
   return (
     <div className="w-full max-w-4xl mt-8 space-y-6">
       
+      {/* Company Header */}
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-4">
+          {rawData?.['logo url'] ? (
+            <img src={rawData['logo url']} alt={companyName} className="w-16 h-16 rounded-xl border border-neutral-800 object-contain bg-white p-1" />
+          ) : (
+            <div className="w-16 h-16 rounded-xl border border-neutral-800 bg-neutral-900 flex items-center justify-center text-xl font-bold text-neutral-400">
+              {companyName.charAt(0)}
+            </div>
+          )}
+          <div>
+            <div className="flex items-center gap-3 mb-1.5">
+              <h2 className="text-2xl font-semibold text-white">{companyName}</h2>
+              {rawData?.['linkedin url'] && (
+                <a href={rawData['linkedin url']} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                </a>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-400">
+              {rawData?.type && <span className="capitalize">{rawData.type}</span>}
+              {rawData?.type && (rawData?.locality || rawData?.country || rawData?.founded) && <span className="w-1 h-1 rounded-full bg-neutral-700" />}
+              
+              {(rawData?.locality || rawData?.country) && (
+                <span>{[rawData.locality, rawData.country].filter(Boolean).join(', ')}</span>
+              )}
+              
+              {(rawData?.locality || rawData?.country) && rawData?.founded && <span className="w-1 h-1 rounded-full bg-neutral-700" />}
+              
+              {rawData?.founded && <span>Founded {rawData.founded}</span>}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Why Now */}
       <Card className="p-6 bg-gradient-to-r from-orange-500/10 to-transparent border-orange-500/20">
         <div className="flex items-start gap-4">

@@ -36,6 +36,7 @@ export function CampaignContactsTab({ campaignId }: Props) {
       name: cc.contact!.name,
       role: cc.contact!.role,
       companyName: cc.contact!.company?.name || 'Unknown',
+      campaignName: cc.campaign?.name || 'Unknown Campaign',
       email: cc.contact!.email,
       linkedin_url: cc.contact!.linkedin_url,
       status: cc.status,

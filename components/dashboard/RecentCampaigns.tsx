@@ -35,7 +35,7 @@ export function RecentCampaigns() {
               <tr key={campaign.id} className="group hover:bg-neutral-800/30 transition-colors">
                 <td className="py-3 pr-4">
                   <div className="font-medium text-neutral-200">{campaign.name}</div>
-                  <div className="text-xs text-neutral-500 mt-0.5">Created {campaign.createdAt}</div>
+                  <div className="text-xs text-neutral-500 mt-0.5">Created {campaign.created_at}</div>
                 </td>
                 <td className="py-3 pr-4">
                   <Badge status={campaign.status} />

@@ -43,6 +43,7 @@ export const contactService = {
         status,
         added_at,
         campaign_id,
+        campaign:campaigns(name),
         contact_id,
         contact:contacts(
           *,

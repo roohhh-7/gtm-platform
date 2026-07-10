@@ -86,6 +86,7 @@ export interface CampaignContact {
   status: 'prospect' | 'sent' | 'replied' | 'bounced';
   added_at: string;
   contact?: Contact; // For joined queries
+  campaign?: { name: string }; // For joined queries
 }
 
 export interface CompanyResearch {

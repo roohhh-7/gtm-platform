@@ -3,8 +3,8 @@ import { cn } from '@/lib/utils';
 import { CampaignStatus } from '@/types';
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
-  variant?: 'default' | 'success' | 'warning' | 'neutral';
-  status?: CampaignStatus; // Helper for auto-mapping statuses
+  variant?: 'default' | 'success' | 'warning' | 'neutral' | 'error';
+  status?: string; // Accept any status string
 }
 
 export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
@@ -12,15 +12,22 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
     let activeVariant = variant;
 
     if (status) {
-      switch (status) {
+      switch (status.toLowerCase()) {
         case 'active':
+        case 'sent':
+        case 'replied':
           activeVariant = 'success';
           break;
         case 'paused':
+        case 'warning':
           activeVariant = 'warning';
           break;
-        case 'draft':
-        case 'completed':
+        case 'bounced':
+        case 'error':
+        case 'disqualified':
+          activeVariant = 'error';
+          break;
+        default:
           activeVariant = 'neutral';
           break;
       }
@@ -30,6 +37,7 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
       default: 'bg-neutral-800 text-neutral-300',
       success: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
       warning: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+      error: 'bg-red-500/10 text-red-400 border border-red-500/20',
       neutral: 'bg-neutral-800/50 text-neutral-400 border border-neutral-700/50',
     };
 

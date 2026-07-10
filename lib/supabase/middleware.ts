@@ -14,7 +14,7 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: any[]) {
           cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value));
           supabaseResponse = NextResponse.next({
             request,
@@ -47,7 +47,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Redirect to dashboard if logged in and trying to access /login
-  if (user && request.nextUrl.pathname.startsWith('/login')) {
+  if (session?.user && request.nextUrl.pathname.startsWith('/login')) {
     const url = request.nextUrl.clone();
     url.pathname = '/';
     return NextResponse.redirect(url);

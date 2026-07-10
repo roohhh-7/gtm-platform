@@ -17,10 +17,51 @@ type Props = {
 export function CompanySpreadsheetView({ company, campaignId }: Props) {
   const [activeTab, setActiveTab] = useState<'company' | 'people'>('company');
   
+  // Local Company state for real-time updates
+  const [localCompany, setLocalCompany] = useState(company);
+  
+  // Update local company if props change
+  useEffect(() => {
+    setLocalCompany(company);
+  }, [company]);
+
   // Research State
-  const [researchStatus, setResearchStatus] = useState<'idle' | 'loading' | 'complete' | 'error'>('idle');
+  const [researchStatus, setResearchStatus] = useState<'idle' | 'loading' | 'complete' | 'error' | 'enriching'>(
+    company.raw_data ? 'complete' : 'idle'
+  );
   const [showReport, setShowReport] = useState(false);
   const [researchData, setResearchData] = useState<string[] | null>(null);
+
+  // Poll for Clay Enrichment updates
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (researchStatus === 'enriching') {
+      interval = setInterval(async () => {
+        try {
+          const supabase = createClient();
+          const { data, error } = await supabase
+            .from('companies')
+            .select('*')
+            .eq('id', localCompany.id)
+            .single();
+            
+          if (data && data.raw_data) {
+            setLocalCompany(data);
+            setResearchStatus('complete');
+            setShowReport(true);
+            clearInterval(interval);
+          }
+        } catch (err) {
+          console.error("Polling error", err);
+        }
+      }, 3000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [researchStatus, localCompany.id]);
 
   // People State
   const [peopleData, setPeopleData] = useState<any[]>([]);
@@ -132,7 +173,7 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
 
   const handleClayCompanyEnrichment = async () => {
     if (researchStatus !== 'idle') return;
-    setResearchStatus('loading');
+    setResearchStatus('enriching');
     
     try {
       // Send a POST request to our internal API route to avoid CORS issues
@@ -140,8 +181,8 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          company_id: company.id, 
-          domain: company.domain 
+          company_id: localCompany.id, 
+          domain: localCompany.domain 
         })
       });
       
@@ -149,8 +190,7 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
         throw new Error('Failed to send data to Clay');
       }
       
-      alert('Sent to Clay successfully! The data will be enriched in the background. Please refresh the page in a few moments.');
-      setResearchStatus('complete');
+      // We don't alert here anymore, we just let the polling take over
     } catch (error: any) {
       console.error(error);
       alert(error.message);
@@ -257,15 +297,15 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
               <TableBody>
                 <TableRow className="border-neutral-800 hover:bg-neutral-800/30">
                   <TableCell className="border-r border-neutral-800 text-center text-neutral-500 text-xs">1</TableCell>
-                  <TableCell className="border-r border-neutral-800 font-medium text-white">{company.name}</TableCell>
+                  <TableCell className="border-r border-neutral-800 font-medium text-white">{localCompany.name}</TableCell>
                   <TableCell className="border-r border-neutral-800 text-blue-400">
-                    <a href={`https://${company.domain}`} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                      {company.domain || 'website.com'}
+                    <a href={`https://${localCompany.domain}`} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                      {localCompany.domain || 'website.com'}
                     </a>
                   </TableCell>
-                  <TableCell className="border-r border-neutral-800 text-neutral-300">{company.industry || '-'}</TableCell>
-                  <TableCell className="border-r border-neutral-800 text-neutral-300">{company.employees || '-'}</TableCell>
-                  <TableCell className="border-r border-neutral-800 text-neutral-300">{company.country || '-'}</TableCell>
+                  <TableCell className="border-r border-neutral-800 text-neutral-300">{localCompany.industry || '-'}</TableCell>
+                  <TableCell className="border-r border-neutral-800 text-neutral-300">{localCompany.employees || '-'}</TableCell>
+                  <TableCell className="border-r border-neutral-800 text-neutral-300">{localCompany.country || '-'}</TableCell>
                   
                   {/* Research Action Cell */}
                   <TableCell className="p-0 relative bg-blue-500/5">
@@ -274,8 +314,8 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
                         <div className="flex gap-2">
                           <button 
                             onClick={handleResearch}
-                            disabled={!company.raw_data}
-                            title={!company.raw_data ? "Enrich with Clay first" : "Run AI Deep Research"}
+                            disabled={!localCompany.raw_data}
+                            title={!localCompany.raw_data ? "Enrich with Clay first" : "Run AI Deep Research"}
                             className="flex items-center gap-1.5 px-3 py-1 rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs font-medium border border-blue-500/20"
                           >
                             <Play className="w-3 h-3 fill-current" />
@@ -294,10 +334,24 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
                           Researching...
                         </div>
+                      ) : researchStatus === 'enriching' ? (
+                        <div className="flex items-center gap-2 text-indigo-400 text-xs font-medium">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          Enriching...
+                        </div>
                       ) : (
-                        <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          Done
+                        <div className="flex gap-2 items-center">
+                          <button 
+                            onClick={handleResearch}
+                            className="flex items-center gap-1.5 px-3 py-1 rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-xs font-medium border border-blue-500/20"
+                          >
+                            <Play className="w-3 h-3 fill-current" />
+                            View Report
+                          </button>
+                          <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium px-2">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Done
+                          </div>
                         </div>
                       )}
                     </div>
@@ -396,9 +450,16 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
               Generated successfully
             </Badge>
           </div>
-          {showReport ? (
-            <MockResearchFlow companyName={company.name} skipLoading={researchStatus === 'complete'} researchData={researchData} rawData={company.raw_data} />
-          ) : null}
+          {showReport && (
+            <div className="p-6">
+              <MockResearchFlow 
+                companyName={localCompany.name} 
+                skipLoading={true} 
+                researchData={researchData} 
+                rawData={localCompany.raw_data} 
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

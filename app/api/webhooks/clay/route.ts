@@ -14,12 +14,15 @@ export async function POST(req: Request) {
     console.log('Received Clay Webhook:', payload);
 
     // Clay will need to send back the domain so we can match it.
-    const domain = payload.domain || payload.Domain;
+    let domain = payload.domain || payload.Domain;
 
     if (!domain) {
       console.error('Webhook Error: Missing domain in payload');
       return NextResponse.json({ error: 'Missing domain' }, { status: 400 });
     }
+
+    // Clean the domain: remove http://, https://, www., and trailing slashes
+    domain = domain.replace(/^(?:https?:\/\/)?(?:www\.)?/i, '').split('/')[0];
 
     // Store the raw enriched data in the company's raw_data column
     const { error: updateError } = await supabaseAdmin

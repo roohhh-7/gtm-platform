@@ -10,6 +10,7 @@ type Props = {
   companyName: string;
   skipLoading?: boolean;
   researchData?: string[] | null;
+  rawData?: Record<string, any> | null;
 };
 
 const RESEARCH_STEPS = [
@@ -24,7 +25,7 @@ const RESEARCH_STEPS = [
   'Recent News'
 ];
 
-export function MockResearchFlow({ companyName, skipLoading = false, researchData }: Props) {
+export function MockResearchFlow({ companyName, skipLoading = false, researchData, rawData }: Props) {
   const [status, setStatus] = useState<'idle' | 'researching' | 'complete'>(skipLoading ? 'complete' : 'idle');
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -50,7 +51,7 @@ export function MockResearchFlow({ companyName, skipLoading = false, researchDat
   }, [status]);
 
   if (status === 'complete') {
-    return <CompanyIntelligenceReport companyName={companyName} researchData={researchData} />;
+    return <CompanyIntelligenceReport companyName={companyName} researchData={researchData} rawData={rawData} />;
   }
 
   return (

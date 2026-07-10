@@ -130,6 +130,36 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
     }
   };
 
+  const handleClayCompanyEnrichment = async () => {
+    if (researchStatus !== 'idle') return;
+    setResearchStatus('loading');
+    
+    try {
+      // Send a POST request to the Clay webhook source
+      const response = await fetch('https://api.clay.com/v3/sources/webhook/pull-in-data-from-a-webhook-aa994a31-14dd-46e9-80e0-5fbfe6d16566', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          company_id: company.id, 
+          domain: company.domain 
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to send data to Clay');
+      }
+      
+      alert('Sent to Clay successfully! The data will be enriched in the background. Please refresh the page in a few moments.');
+      setResearchStatus('complete');
+      setShowReport(true);
+    } catch (error: any) {
+      console.error(error);
+      alert(error.message);
+      setResearchStatus('error');
+      setTimeout(() => setResearchStatus('idle'), 3000);
+    }
+  };
+
   const handleEnrichPerson = async (personId: number) => {
     // In a real app, this would hit the Clay webhook with the person's info
     setEnrichingPersonIds(prev => new Set(prev).add(personId));
@@ -242,13 +272,22 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
                   <TableCell className="p-0 relative bg-blue-500/5">
                     <div className="absolute inset-0 flex items-center justify-center">
                       {researchStatus === 'idle' ? (
-                        <button 
-                          onClick={handleResearch}
-                          className="flex items-center gap-1.5 px-3 py-1 rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-xs font-medium border border-blue-500/20"
-                        >
-                          <Play className="w-3 h-3 fill-current" />
-                          Run Research
-                        </button>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={handleResearch}
+                            className="flex items-center gap-1.5 px-3 py-1 rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-xs font-medium border border-blue-500/20"
+                          >
+                            <Play className="w-3 h-3 fill-current" />
+                            Run Research
+                          </button>
+                          <button 
+                            onClick={handleClayCompanyEnrichment}
+                            className="flex items-center gap-1.5 px-3 py-1 rounded bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-colors text-xs font-medium border border-indigo-500/20"
+                          >
+                            <Sparkles className="w-3 h-3" />
+                            Enrich with Clay
+                          </button>
+                        </div>
                       ) : researchStatus === 'loading' ? (
                         <div className="flex items-center gap-2 text-blue-400 text-xs font-medium">
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -356,7 +395,9 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
               Generated successfully
             </Badge>
           </div>
-          <MockResearchFlow companyName={company.name} skipLoading researchData={researchData} />
+          {showReport ? (
+            <MockResearchFlow companyName={company.name} skipLoading={researchStatus === 'complete'} researchData={researchData} rawData={company.raw_data} />
+          ) : null}
         </div>
       )}
     </div>

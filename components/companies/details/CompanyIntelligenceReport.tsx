@@ -23,9 +23,10 @@ import {
 type Props = {
   companyName: string;
   researchData?: string[] | null;
+  rawData?: Record<string, any> | null;
 };
 
-export function CompanyIntelligenceReport({ companyName, researchData }: Props) {
+export function CompanyIntelligenceReport({ companyName, researchData, rawData }: Props) {
   // If researchData exists and has 9 items, map them to variables for readability
   const [
     overview,
@@ -70,7 +71,7 @@ export function CompanyIntelligenceReport({ companyName, researchData }: Props) 
               <h3 className="text-sm font-medium text-blue-400 uppercase tracking-wider">AI Summary</h3>
             </div>
             <p className="text-neutral-200 text-sm leading-relaxed">
-              {companyName} appears to be a strong fit because the company has a mature product organization, growing engineering team, and increasing investment in AI-powered workflows.
+              {rawData?.Description || aiSummary || `${companyName} appears to be a strong fit because the company has a mature product organization, growing engineering team, and increasing investment in AI-powered workflows.`}
             </p>
           </Card>
 
@@ -162,11 +163,11 @@ export function CompanyIntelligenceReport({ companyName, researchData }: Props) 
               </div>
               <div>
                 <p className="text-xs text-neutral-500 mb-1">Hiring</p>
-                <p className="text-sm text-neutral-200">12 Product openings</p>
+                <p className="text-sm text-neutral-200">{rawData?.['Job Openings'] || '12 Product openings'}</p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 mb-1">Expansion</p>
-                <p className="text-sm text-neutral-200">Recently launched Enterprise offering</p>
+                <p className="text-xs text-neutral-500 mb-1">Funding</p>
+                <p className="text-sm text-neutral-200">{rawData?.['Latest Funding'] || 'Recently launched Enterprise offering'}</p>
               </div>
             </div>
           </Card>
@@ -203,11 +204,21 @@ export function CompanyIntelligenceReport({ companyName, researchData }: Props) 
               <h3 className="text-sm font-medium text-neutral-400 uppercase tracking-wider">Tech Stack</h3>
             </div>
             <div className="flex flex-wrap gap-2">
-              {['Next.js', 'React', 'Node.js', 'PostgreSQL', 'OpenAI', 'Vercel', 'Segment'].map(tech => (
-                <Badge key={tech} variant="neutral" className="bg-neutral-800 border-neutral-700">
-                  {tech}
-                </Badge>
-              ))}
+              {rawData?.['Website Tech Stack'] ? (
+                (typeof rawData['Website Tech Stack'] === 'string' ? rawData['Website Tech Stack'].split(',') : rawData['Website Tech Stack']).map((tech: string) => (
+                  <Badge key={tech.trim()} variant="neutral" className="bg-neutral-800 border-neutral-700">
+                    {tech.trim()}
+                  </Badge>
+                ))
+              ) : techStack ? (
+                <div className="text-sm text-neutral-300">{techStack}</div>
+              ) : (
+                ['Next.js', 'React', 'Node.js', 'PostgreSQL', 'OpenAI', 'Vercel', 'Segment'].map(tech => (
+                  <Badge key={tech} variant="neutral" className="bg-neutral-800 border-neutral-700">
+                    {tech}
+                  </Badge>
+                ))
+              )}
             </div>
           </Card>
         </div>
@@ -221,18 +232,28 @@ export function CompanyIntelligenceReport({ companyName, researchData }: Props) 
             <h3 className="text-sm font-medium text-neutral-400 uppercase tracking-wider">Recent News</h3>
           </div>
           <ul className="space-y-4">
-            <li className="flex gap-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
-              <p className="text-sm text-neutral-200">Raised Series B six months ago.</p>
-            </li>
-            <li className="flex gap-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
-              <p className="text-sm text-neutral-200">Released Enterprise Dashboard.</p>
-            </li>
-            <li className="flex gap-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
-              <p className="text-sm text-neutral-200">Expanded into Southeast Asia.</p>
-            </li>
+            {rawData?.['Positive News Article'] ? (
+              <li className="flex gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
+                <p className="text-sm text-neutral-200">{rawData['Positive News Article']}</p>
+              </li>
+            ) : recentNews ? (
+              <li className="flex gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
+                <p className="text-sm text-neutral-200">{recentNews}</p>
+              </li>
+            ) : (
+              <>
+                <li className="flex gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
+                  <p className="text-sm text-neutral-200">Raised Series B six months ago.</p>
+                </li>
+                <li className="flex gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
+                  <p className="text-sm text-neutral-200">Released Enterprise Dashboard.</p>
+                </li>
+              </>
+            )}
           </ul>
         </Card>
 

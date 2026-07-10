@@ -13,13 +13,12 @@ export async function POST(req: Request) {
 
     console.log('Received Clay Webhook:', payload);
 
-    // Clay will need to send back the company_id or the domain so we can match it.
-    // Let's assume Clay passes back a "company_id" field in the root of the JSON payload.
-    const companyId = payload.company_id;
+    // Clay will need to send back the domain so we can match it.
+    const domain = payload.domain || payload.Domain;
 
-    if (!companyId) {
-      console.error('Webhook Error: Missing company_id in payload');
-      return NextResponse.json({ error: 'Missing company_id' }, { status: 400 });
+    if (!domain) {
+      console.error('Webhook Error: Missing domain in payload');
+      return NextResponse.json({ error: 'Missing domain' }, { status: 400 });
     }
 
     // Store the raw enriched data in the company's raw_data column
@@ -28,7 +27,7 @@ export async function POST(req: Request) {
       .update({
         raw_data: payload,
       })
-      .eq('id', companyId);
+      .eq('domain', domain);
 
     if (updateError) {
       console.error('Webhook DB Update Error:', updateError);

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Play, Download, Loader2, FileSpreadsheet, Plus, CheckCircle2, Users, Building2 } from 'lucide-react';
+import { Play, Download, Loader2, FileSpreadsheet, Plus, CheckCircle2, Users, Building2, Sparkles } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { MockResearchFlow } from './MockResearchFlow';

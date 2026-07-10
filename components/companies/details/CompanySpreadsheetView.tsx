@@ -135,8 +135,8 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
     setResearchStatus('loading');
     
     try {
-      // Send a POST request to the Clay webhook source
-      const response = await fetch('https://api.clay.com/v3/sources/webhook/pull-in-data-from-a-webhook-aa994a31-14dd-46e9-80e0-5fbfe6d16566', {
+      // Send a POST request to our internal API route to avoid CORS issues
+      const response = await fetch('/api/clay/trigger', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -151,7 +151,6 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
       
       alert('Sent to Clay successfully! The data will be enriched in the background. Please refresh the page in a few moments.');
       setResearchStatus('complete');
-      setShowReport(true);
     } catch (error: any) {
       console.error(error);
       alert(error.message);
@@ -275,7 +274,9 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
                         <div className="flex gap-2">
                           <button 
                             onClick={handleResearch}
-                            className="flex items-center gap-1.5 px-3 py-1 rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-xs font-medium border border-blue-500/20"
+                            disabled={!company.raw_data}
+                            title={!company.raw_data ? "Enrich with Clay first" : "Run AI Deep Research"}
+                            className="flex items-center gap-1.5 px-3 py-1 rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs font-medium border border-blue-500/20"
                           >
                             <Play className="w-3 h-3 fill-current" />
                             Run Research

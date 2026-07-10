@@ -31,11 +31,17 @@ export async function POST(req: Request) {
     // Clean the domain: remove http://, https://, www., and trailing slashes
     let domain = typeof rawDomain === 'string' ? rawDomain.replace(/^(?:https?:\/\/)?(?:www\.)?/i, '').split('/')[0] : '';
 
+    // Mark the payload as coming from Clay so the UI can distinguish it from Apollo data
+    const enrichedPayload = {
+      ...payload,
+      _clay_enriched: true
+    };
+
     // Store the raw enriched data in the company's raw_data column
     const { error: updateError } = await supabaseAdmin
       .from('companies')
       .update({
-        raw_data: payload,
+        raw_data: enrichedPayload,
       })
       .eq('domain', domain);
 

@@ -15,7 +15,7 @@ type Props = {
 };
 
 export function CompanySpreadsheetView({ company, campaignId }: Props) {
-  const [activeTab, setActiveTab] = useState<'company' | 'people'>('company');
+  const [activeTab, setActiveTab] = useState<'company' | 'people' | 'research'>('company');
   
   // Local Company state for real-time updates
   const [localCompany, setLocalCompany] = useState(company);
@@ -25,10 +25,17 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
     setLocalCompany(company);
   }, [company]);
 
-  // Research State
-  const [researchStatus, setResearchStatus] = useState<'idle' | 'loading' | 'complete' | 'error' | 'enriching'>(
-    company.raw_data ? 'complete' : 'idle'
+  // Derived state to check if the company was actually enriched by Clay (not just Apollo data)
+  const isClayEnriched = localCompany.raw_data?._clay_enriched === true;
+
+  // Research State (now specifically for the AI tab)
+  const [researchStatus, setResearchStatus] = useState<'idle' | 'loading' | 'complete' | 'error'>('idle');
+  
+  // Clay Enrichment State
+  const [clayStatus, setClayStatus] = useState<'idle' | 'enriching' | 'complete' | 'error'>(
+    isClayEnriched ? 'complete' : 'idle'
   );
+  
   const [showReport, setShowReport] = useState(false);
   const [researchData, setResearchData] = useState<string[] | null>(null);
 
@@ -36,7 +43,7 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
-    if (researchStatus === 'enriching') {
+    if (clayStatus === 'enriching') {
       interval = setInterval(async () => {
         try {
           const supabase = createClient();
@@ -46,10 +53,9 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
             .eq('id', localCompany.id)
             .single();
             
-          if (data && data.raw_data) {
+          if (data && data.raw_data && data.raw_data._clay_enriched) {
             setLocalCompany(data);
-            setResearchStatus('idle');
-            // Do not show the AI report yet - wait for user to click "Run Research"
+            setClayStatus('complete');
             clearInterval(interval);
           }
         } catch (err) {
@@ -152,8 +158,8 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
   };
 
   const handleClayCompanyEnrichment = async () => {
-    if (researchStatus !== 'idle') return;
-    setResearchStatus('enriching');
+    if (clayStatus !== 'idle') return;
+    setClayStatus('enriching');
     
     try {
       // Send a POST request to our internal API route to avoid CORS issues
@@ -174,8 +180,8 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
     } catch (error: any) {
       console.error(error);
       alert(error.message);
-      setResearchStatus('error');
-      setTimeout(() => setResearchStatus('idle'), 3000);
+      setClayStatus('error');
+      setTimeout(() => setClayStatus('idle'), 3000);
     }
   };
 
@@ -224,6 +230,17 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
           <Users className="w-4 h-4" />
           People
         </button>
+        <button
+          onClick={() => setActiveTab('research')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'research' 
+              ? 'border-indigo-500 text-indigo-400' 
+              : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'
+          }`}
+        >
+          <Sparkles className="w-4 h-4" />
+          AI Research
+        </button>
       </div>
 
       {/* Toolbar */}
@@ -265,11 +282,11 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
                   <TableHead className="w-32 border-r border-neutral-800">Employees</TableHead>
                   <TableHead className="w-32 border-r border-neutral-800">Country</TableHead>
                   
-                  {/* Research Action Column */}
-                  <TableHead className="w-40 bg-blue-500/5 text-blue-300">
+                  {/* Action Column */}
+                  <TableHead className="w-40 bg-indigo-500/5 text-indigo-300">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                      Deep Research (AI)
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                      Enrichment
                     </div>
                   </TableHead>
                 </TableRow>
@@ -287,11 +304,11 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
                   <TableCell className="border-r border-neutral-800 text-neutral-300">{localCompany.employees || '-'}</TableCell>
                   <TableCell className="border-r border-neutral-800 text-neutral-300">{localCompany.country || '-'}</TableCell>
                   
-                  {/* Research Action Cell */}
-                  <TableCell className="p-0 relative bg-blue-500/5">
+                  {/* Enrich Action Cell */}
+                  <TableCell className="p-0 relative bg-indigo-500/5">
                     <div className="absolute inset-0 flex items-center justify-center">
-                      {!localCompany.raw_data ? (
-                        researchStatus === 'enriching' ? (
+                      {!isClayEnriched ? (
+                        clayStatus === 'enriching' ? (
                           <div className="flex items-center gap-2 text-indigo-400 text-xs font-medium">
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             Enriching...
@@ -306,34 +323,10 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
                           </button>
                         )
                       ) : (
-                        researchStatus === 'loading' ? (
-                          <div className="flex items-center gap-2 text-blue-400 text-xs font-medium">
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            Researching...
-                          </div>
-                        ) : researchStatus === 'complete' || showReport ? (
-                          <div className="flex gap-2 items-center">
-                            <button 
-                              onClick={() => setShowReport(true)}
-                              className="flex items-center gap-1.5 px-3 py-1 rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-xs font-medium border border-blue-500/20"
-                            >
-                              <Play className="w-3 h-3 fill-current" />
-                              View Report
-                            </button>
-                            <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium px-2">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              Done
-                            </div>
-                          </div>
-                        ) : (
-                          <button 
-                            onClick={handleResearch}
-                            className="flex items-center gap-1.5 px-3 py-1 rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-xs font-medium border border-blue-500/20"
-                          >
-                            <Play className="w-3 h-3 fill-current" />
-                            Run Research
-                          </button>
-                        )
+                        <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium px-2">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Enriched
+                        </div>
                       )}
                     </div>
                   </TableCell>
@@ -422,8 +415,8 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
         </Table>
       </div>
 
-      {/* Render Clay Enriched Data when available, but before AI research is run */}
-      {activeTab === 'company' && localCompany.raw_data && !showReport && (
+      {/* Render Clay Enriched Data when available */}
+      {activeTab === 'company' && isClayEnriched && (
         <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="flex items-center gap-3 mb-6">
             <h2 className="text-xl font-medium text-white">Clay Enrichment Data</h2>
@@ -435,7 +428,7 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Object.entries(localCompany.raw_data)
-              .filter(([key, value]) => value && typeof value === 'string' && value.trim().length > 0)
+              .filter(([key, value]) => key !== '_clay_enriched' && value && typeof value === 'string' && value.trim().length > 0)
               .map(([key, value]) => (
                 <div key={key} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex flex-col justify-center">
                   <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">{key}</p>
@@ -455,22 +448,46 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
         </div>
       )}
 
-      {/* Render the MockResearchFlow when research is triggered */}
-      {activeTab === 'company' && showReport && (
-        <div className="mt-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Render AI Research Flow in the dedicated tab */}
+      {activeTab === 'research' && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="flex items-center gap-3 mb-6">
             <h2 className="text-xl font-medium text-white">AI Company Intelligence</h2>
-            <Badge variant="success" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
-              <Sparkles className="w-3 h-3 mr-1" />
-              AI Generated
-            </Badge>
+            {showReport && (
+              <Badge variant="success" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                <Sparkles className="w-3 h-3 mr-1" />
+                AI Generated
+              </Badge>
+            )}
           </div>
-          <MockResearchFlow 
-            companyName={localCompany.name} 
-            skipLoading={researchStatus === 'complete'} 
-            researchData={researchData} 
-            rawData={localCompany.raw_data} 
-          />
+          
+          {!showReport ? (
+            <div className="flex flex-col items-center justify-center py-20 px-6 border border-neutral-800 bg-neutral-900/30 rounded-xl border-dashed">
+              <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mb-6">
+                <Sparkles className="w-8 h-8 text-blue-400" />
+              </div>
+              <h3 className="text-xl font-medium text-white mb-2">Deep AI Research</h3>
+              <p className="text-neutral-400 text-center max-w-md mb-8">
+                Generate a comprehensive intelligence report for {localCompany.name} using AI. This will analyze growth signals, tech stack, and generate personalized outreach angles.
+              </p>
+              <Button 
+                onClick={handleResearch} 
+                className="bg-blue-600 hover:bg-blue-700 text-white min-w-[200px]"
+                disabled={!isClayEnriched}
+                title={!isClayEnriched ? "Enrich with Clay first" : "Run Research"}
+              >
+                <Play className="w-4 h-4 mr-2 fill-current" />
+                {isClayEnriched ? "Run Deep Research" : "Enrich Company First"}
+              </Button>
+            </div>
+          ) : (
+            <MockResearchFlow 
+              companyName={localCompany.name} 
+              skipLoading={researchStatus === 'complete'} 
+              researchData={researchData} 
+              rawData={localCompany.raw_data} 
+            />
+          )}
         </div>
       )}
     </div>

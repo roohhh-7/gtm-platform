@@ -29,7 +29,9 @@ export async function POST(req: Request) {
     }
 
     // Clean the domain: remove http://, https://, www., and trailing slashes
-    let domain = typeof rawDomain === 'string' ? rawDomain.replace(/^(?:https?:\/\/)?(?:www\.)?/i, '').split('/')[0] : '';
+    let domain = typeof rawDomain === 'string' 
+      ? rawDomain.replace(/^(?:https?:\/\/)?(?:www\.)?/i, '').split('/')[0].toLowerCase().trim() 
+      : '';
 
     // Mark the payload as coming from Clay so the UI can distinguish it from Apollo data
     const enrichedPayload = {
@@ -38,19 +40,25 @@ export async function POST(req: Request) {
     };
 
     // Store the raw enriched data in the company's raw_data column
-    const { error: updateError } = await supabaseAdmin
+    const { data, error: updateError } = await supabaseAdmin
       .from('companies')
       .update({
         raw_data: enrichedPayload,
       })
-      .eq('domain', domain);
+      .eq('domain', domain)
+      .select();
 
     if (updateError) {
       console.error('Webhook DB Update Error:', updateError);
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    if (!data || data.length === 0) {
+      console.error('Webhook DB Update Error: 0 rows updated. Check RLS or Domain Match.');
+      return NextResponse.json({ error: '0 rows updated. Missing Service Role Key or Domain mismatch.' }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true, updated: data.length });
   } catch (err: any) {
     console.error('Clay Webhook Parsing Error:', err);
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });

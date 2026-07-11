@@ -39,11 +39,12 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
   const [showReport, setShowReport] = useState(false);
   const [researchData, setResearchData] = useState<string[] | null>(null);
 
-  // Poll for Clay Enrichment updates
+  // Poll for Clay Enrichment updates continuously if not enriched yet
+  // This ensures it updates even if the user triggers the webhook manually from Clay
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
-    if (clayStatus === 'enriching') {
+    if (!isClayEnriched) {
       interval = setInterval(async () => {
         try {
           const supabase = createClient();
@@ -61,13 +62,13 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
         } catch (err) {
           console.error("Polling error", err);
         }
-      }, 3000);
+      }, 5000);
     }
-    
+
     return () => {
       if (interval) clearInterval(interval);
-    };
-  }, [researchStatus, localCompany.id]);
+    }
+  }, [isClayEnriched, localCompany.id]);
 
   // People State
   const [peopleData, setPeopleData] = useState<any[]>([]);

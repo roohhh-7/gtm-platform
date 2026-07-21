@@ -34,7 +34,6 @@ export async function syncCompanyToHubSpot(companyData: any, hubspotToken: strin
     domain: companyData.domain,
     name: companyData.name || companyData.domain,
     description: companyData.raw_data?.description || '',
-    industry: companyData.industry || '',
     country: companyData.country || companyData.raw_data?.country || '',
     founded_year: companyData.raw_data?.founded || '',
     linkedin_company_page: companyData.raw_data?.linkedin_url || ''

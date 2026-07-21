@@ -15,6 +15,7 @@ type Props = {
   onPageChange: (page: number) => void;
   onUpdateStatus: (id: string, status: string) => void;
   onDelete: (id: string) => void;
+  onRowClick?: (id: string) => void;
 };
 
 export function CampaignTable({ 
@@ -24,7 +25,8 @@ export function CampaignTable({
   pageSize, 
   onPageChange,
   onUpdateStatus,
-  onDelete
+  onDelete,
+  onRowClick
 }: Props) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const router = useRouter();
@@ -67,7 +69,7 @@ export function CampaignTable({
               <TableRow 
                 key={campaign.id}
                 className="cursor-pointer hover:bg-neutral-800/50 transition-colors"
-                onClick={() => router.push(`/campaigns/${campaign.id}`)}
+                onClick={() => onRowClick ? onRowClick(campaign.id) : router.push(`/campaigns/${campaign.id}`)}
               >
                 <TableCell>
                   <div className="font-medium text-neutral-200">{campaign.name}</div>

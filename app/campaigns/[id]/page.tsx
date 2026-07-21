@@ -8,14 +8,15 @@ import { CampaignOutreachTab } from '@/components/campaigns/details/CampaignOutr
 import { CampaignResearchTab } from '@/components/campaigns/details/CampaignResearchTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 
-export default async function CampaignDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CampaignDetailsPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ tab?: string }> }) {
   const { id } = await params;
+  const { tab } = await searchParams;
   
   return (
     <div className="space-y-6">
       <CampaignDetailsHeader campaignId={id} />
       
-      <Tabs defaultValue="overview" className="mt-6">
+      <Tabs defaultValue={tab || "overview"} className="mt-6">
         <TabsList className="mb-6 flex flex-wrap gap-2">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="icp">ICP</TabsTrigger>

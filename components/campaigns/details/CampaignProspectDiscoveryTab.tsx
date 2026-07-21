@@ -63,10 +63,6 @@ export function CampaignProspectDiscoveryTab({ campaignId }: Props) {
     if (newSet.has(id)) {
       newSet.delete(id);
     } else {
-      // Allow up to 3 selections
-      if (newSet.size >= 3) {
-        return; // Alternatively, could remove oldest or show warning
-      }
       newSet.add(id);
     }
     setSelectedIds(newSet);
@@ -150,7 +146,7 @@ export function CampaignProspectDiscoveryTab({ campaignId }: Props) {
               className="flex items-center gap-2 bg-white text-black px-6 py-2 rounded-lg font-medium hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ChevronRight className="h-4 w-4" />}
-              {saving ? 'Saving...' : `Continue (${selectedIds.size})`}
+              {saving ? 'Saving...' : `Add to Table (${selectedIds.size})`}
             </button>
           </div>
 

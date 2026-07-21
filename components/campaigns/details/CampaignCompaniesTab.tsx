@@ -8,6 +8,7 @@ import { CompaniesTable } from '@/components/companies/CompaniesTable';
 import { companyService } from '@/services/companies';
 import { CampaignCompany } from '@/types';
 import AddCompanyModal from '@/components/companies/AddCompanyModal';
+import { FileSpreadsheet, Plus, Download } from 'lucide-react';
 
 type Props = {
   campaignId: string;
@@ -35,6 +36,8 @@ export function CampaignCompaniesTab({ campaignId }: Props) {
       id: cc.company!.id,
       campaignId: campaignId,
       name: cc.company!.name,
+      domain: cc.company!.domain,
+      country: cc.company!.country,
       industry: cc.company!.industry,
       employees: cc.company!.employees,
       status: cc.status,
@@ -44,18 +47,42 @@ export function CampaignCompaniesTab({ campaignId }: Props) {
     }));
 
   return (
-    <Card className="p-0 overflow-hidden">
-      <div className="p-4 border-b border-neutral-800/60 flex items-center justify-between">
-        <div className="w-72">
-          <Input placeholder="Search companies..." icon={true} />
+    <div className="space-y-6">
+      {/* Toolbar - Matches Spreadsheet View */}
+      <div className="flex items-center justify-between bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3">
+        <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-2 text-white font-medium">
+            <FileSpreadsheet className="w-4 h-4 text-indigo-400" />
+            Company Data
+          </div>
+          <div className="h-4 w-px bg-neutral-700" />
+          <span className="text-neutral-400">
+            {tableData.length} {tableData.length === 1 ? 'row' : 'rows'}
+          </span>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)} variant="secondary" size="sm">
-          Add Company
-        </Button>
+        
+        <div className="flex items-center gap-4">
+          <div className="w-64">
+            <Input placeholder="Search companies..." icon={true} className="h-8 text-xs bg-neutral-950 border-neutral-800" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setIsAddModalOpen(true)} variant="secondary" size="sm" className="h-8 gap-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300">
+              <Plus className="w-3.5 h-3.5" />
+              Add Company
+            </Button>
+            <Button variant="secondary" size="sm" className="h-8 gap-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300">
+              <Download className="w-3.5 h-3.5" />
+              Export CSV
+            </Button>
+          </div>
+        </div>
       </div>
 
+      {/* Spreadsheet Container */}
       {loading ? (
-        <div className="py-12 flex justify-center text-neutral-500">Loading companies...</div>
+        <Card className="p-0 border border-neutral-800 bg-neutral-900/50">
+          <div className="py-12 flex justify-center text-neutral-500">Loading companies...</div>
+        </Card>
       ) : (
         <CompaniesTable data={tableData} />
       )}
@@ -69,6 +96,6 @@ export function CampaignCompaniesTab({ campaignId }: Props) {
           fetchCompanies();
         }}
       />
-    </Card>
+    </div>
   );
 }

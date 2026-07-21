@@ -50,39 +50,19 @@ export async function POST(req: NextRequest) {
 
     const icp = icpRows[0];
 
-    // 1. Credit-First Architecture: Check for existing prospects
-    if (!refresh) {
-      const { data: existingProspects, error: existingError } = await supabase
-        .from('campaign_companies')
-        .select('*, company:companies(*)')
-        .eq('campaign_id', campaignId)
-        .eq('status', 'prospect');
-
-      if (!existingError && existingProspects && existingProspects.length > 0) {
-        
-        // Check if ICP was updated AFTER the most recent prospect was added
-        const maxAddedAt = Math.max(...existingProspects.map(p => new Date(p.added_at).getTime()));
-        const icpUpdatedAt = icp.updated_at ? new Date(icp.updated_at).getTime() : 0;
-        const isOutdated = icpUpdatedAt > maxAddedAt;
-
-        // Return existing candidates mapped to expected format
-        const candidates = existingProspects.map(cp => ({
-          ...cp.company,
-          country: cp.company.raw_data?.country || 'Unknown',
-          ai_fit_score: cp.ai_fit_score,
-          why_recommended: cp.why_recommended || []
-        }));
-        // Sort by score
-        candidates.sort((a, b) => (b.ai_fit_score || 0) - (a.ai_fit_score || 0));
-        return NextResponse.json({ candidates, isOutdated });
-      }
-    } else {
-      // If we are forcing a refresh, delete the old prospects from this campaign first
-      await supabase
-        .from('campaign_companies')
-        .delete()
-        .eq('campaign_id', campaignId)
-        .eq('status', 'prospect');
+    // 1. Fetch existing domains for this campaign so we don't suggest companies already in the table
+    const { data: existingLinks } = await supabase
+      .from('campaign_companies')
+      .select('company_id, company:companies(domain)')
+      .eq('campaign_id', campaignId);
+      
+    const existingDomains = new Set<string>();
+    if (existingLinks) {
+      existingLinks.forEach(link => {
+        if (link.company && link.company.domain) {
+          existingDomains.add(link.company.domain.toLowerCase());
+        }
+      });
     }
 
     if (!icp.titles?.length && !icp.industries?.length && !icp.company_sizes?.length && !icp.locations?.length && !icp.product_description && !icp.problem_statement && !icp.market_segments?.length && !icp.ideal_customer_characteristics) {
@@ -110,8 +90,13 @@ export async function POST(req: NextRequest) {
     // n8n-ready: pass the candidate pool and the ICP to the decoupled engine
     const rankedCompanies = rankCompanies(candidatePool, icp);
 
-    // 4. Return Top 10
-    const top10 = rankedCompanies.slice(0, 10);
+    // 4. Filter out companies already in the table and return Top 10
+    const newCandidates = rankedCompanies.filter(company => {
+      const domain = company.domain?.toLowerCase();
+      return domain && !existingDomains.has(domain);
+    });
+
+    const top10 = newCandidates.slice(0, 10);
 
     return NextResponse.json({ candidates: top10 });
   } catch (error: any) {

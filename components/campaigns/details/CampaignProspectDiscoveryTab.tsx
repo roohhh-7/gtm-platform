@@ -18,7 +18,6 @@ export function CampaignProspectDiscoveryTab({ campaignId }: Props) {
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
-  const [isOutdated, setIsOutdated] = useState(false);
 
   const handleFindCompanies = async (forceRefresh = false) => {
     setLoading(true);
@@ -45,12 +44,6 @@ export function CampaignProspectDiscoveryTab({ campaignId }: Props) {
       
       setProspects(data.candidates || []);
       setHasSearched(true);
-      if (data.isOutdated !== undefined) {
-        setIsOutdated(data.isOutdated);
-      } else {
-        // If it was a fresh search (Apollo fetch), it's no longer outdated
-        setIsOutdated(false);
-      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -149,20 +142,6 @@ export function CampaignProspectDiscoveryTab({ campaignId }: Props) {
               {saving ? 'Saving...' : `Add to Table (${selectedIds.size})`}
             </button>
           </div>
-
-          {isOutdated && (
-            <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500/90 p-4 rounded-xl flex items-center justify-between shadow-sm">
-              <p className="text-sm">
-                Your ICP has changed since the last search. The current recommended companies may be outdated.
-              </p>
-              <button
-                onClick={() => handleFindCompanies(true)}
-                className="text-sm font-medium bg-yellow-500/20 hover:bg-yellow-500/30 px-4 py-1.5 rounded-lg transition-colors"
-              >
-                Run Prospect Discovery Again
-              </button>
-            </div>
-          )}
 
           {error && (
             <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-lg text-sm">

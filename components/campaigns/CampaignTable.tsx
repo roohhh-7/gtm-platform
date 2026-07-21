@@ -43,7 +43,7 @@ export function CampaignTable({
   };
 
   return (
-    <Card className="p-0 overflow-hidden flex flex-col">
+    <Card className="p-0 flex flex-col">
       <Table>
         <TableHeader>
           <tr>

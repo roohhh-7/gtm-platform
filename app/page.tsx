@@ -4,6 +4,8 @@ import { RecentCampaigns } from "@/components/dashboard/RecentCampaigns";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 
+export const dynamic = 'force-dynamic';
+
 export default async function Dashboard() {
   const supabase = await createClient();
 

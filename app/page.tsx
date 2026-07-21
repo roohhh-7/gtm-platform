@@ -1,9 +1,65 @@
+import { createClient } from "@/lib/supabase/server";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentCampaigns } from "@/components/dashboard/RecentCampaigns";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 
 export default async function Dashboard() {
+  const supabase = await createClient();
+
+  // 1. Total Campaigns
+  const { count: campaignsCount } = await supabase
+    .from('campaigns')
+    .select('*', { count: 'exact', head: true })
+    .neq('status', 'archived');
+
+  // 2. Total Companies Sourced
+  const { count: companiesCount } = await supabase
+    .from('campaign_companies')
+    .select('*', { count: 'exact', head: true });
+
+  // 3. Total Contacts Found
+  // (We use a mock count or query campaign_contacts if it exists)
+  const { count: contactsCount } = await supabase
+    .from('campaign_companies') // for now just an arbitrary metric until contacts table is populated
+    .select('*', { count: 'exact', head: true });
+
+  // 4. Recent Campaigns
+  const { data: recentCampaigns } = await supabase
+    .from('campaigns')
+    .select('id, name, status, created_at, user_id')
+    .neq('status', 'archived')
+    .order('created_at', { ascending: false })
+    .limit(5);
+    
+  // Fetch company counts for each recent campaign
+  const campaignsWithCounts = await Promise.all((recentCampaigns || []).map(async (campaign) => {
+    const { count } = await supabase
+      .from('campaign_companies')
+      .select('*', { count: 'exact', head: true })
+      .eq('campaign_id', campaign.id);
+    return {
+      ...campaign,
+      companies_count: count || 0,
+      contacts_count: 0 // Mock until we build Contacts sync
+    };
+  }));
+
+  // 5. Recent Activity
+  // Let's just fetch the 5 most recently created campaigns to show as activity
+  const { data: recentActivityCampaigns } = await supabase
+    .from('campaigns')
+    .select('id, name, created_at')
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  const activities = (recentActivityCampaigns || []).map(c => ({
+    id: c.id,
+    user: 'System',
+    action: 'created campaign',
+    target: c.name,
+    time: new Date(c.created_at).toLocaleDateString()
+  }));
 
   return (
     <div className="space-y-6">
@@ -22,20 +78,20 @@ export default async function Dashboard() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
         <StatCard
           title="Active Campaigns"
-          value="12"
-          trend="+2"
+          value={(campaignsCount || 0).toString()}
+          trend=""
           trendUp={true}
         />
         <StatCard
-          title="Emails Sent"
-          value="45,231"
-          trend="+12%"
+          title="Companies Discovered"
+          value={(companiesCount || 0).toString()}
+          trend=""
           trendUp={true}
         />
         <StatCard
-          title="Meetings Booked"
-          value="128"
-          trend="-3%"
+          title="Contacts Sourced"
+          value={(0).toString()}
+          trend=""
           trendUp={false}
         />
       </div>
@@ -43,12 +99,12 @@ export default async function Dashboard() {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 md:gap-6">
         <div className="col-span-1 space-y-4 md:space-y-6 lg:col-span-2">
-          <RecentCampaigns />
+          <RecentCampaigns campaigns={campaignsWithCounts} />
         </div>
 
         <div className="col-span-1 space-y-4 md:space-y-6">
           <QuickActions />
-          <RecentActivity />
+          <RecentActivity activities={activities} />
         </div>
       </div>
     </div>

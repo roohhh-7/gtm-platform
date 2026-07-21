@@ -1,6 +1,7 @@
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Plus, Users, Sparkles, LineChart } from 'lucide-react';
+import Link from 'next/link';
 
 export function QuickActions() {
   return (
@@ -11,22 +12,30 @@ export function QuickActions() {
       </div>
       
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-1">
-        <Button variant="secondary" className="w-full justify-start gap-3">
-          <Plus className="h-4 w-4 text-neutral-400" />
-          <span>New Campaign</span>
-        </Button>
-        <Button variant="secondary" className="w-full justify-start gap-3">
-          <Users className="h-4 w-4 text-neutral-400" />
-          <span>Import Contacts</span>
-        </Button>
-        <Button variant="secondary" className="w-full justify-start gap-3">
-          <Sparkles className="h-4 w-4 text-neutral-400" />
-          <span>Generate Copy</span>
-        </Button>
-        <Button variant="secondary" className="w-full justify-start gap-3">
-          <LineChart className="h-4 w-4 text-neutral-400" />
-          <span>View Reports</span>
-        </Button>
+        <Link href="/campaigns" passHref>
+          <Button variant="secondary" className="w-full justify-start gap-3">
+            <Plus className="h-4 w-4 text-neutral-400" />
+            <span>New Campaign</span>
+          </Button>
+        </Link>
+        <Link href="/contacts" passHref>
+          <Button variant="secondary" className="w-full justify-start gap-3">
+            <Users className="h-4 w-4 text-neutral-400" />
+            <span>Import Contacts</span>
+          </Button>
+        </Link>
+        <Link href="/research" passHref>
+          <Button variant="secondary" className="w-full justify-start gap-3">
+            <Sparkles className="h-4 w-4 text-neutral-400" />
+            <span>AI Research</span>
+          </Button>
+        </Link>
+        <Link href="/analytics" passHref>
+          <Button variant="secondary" className="w-full justify-start gap-3">
+            <LineChart className="h-4 w-4 text-neutral-400" />
+            <span>View Reports</span>
+          </Button>
+        </Link>
       </div>
     </Card>
   );

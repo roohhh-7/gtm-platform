@@ -58,7 +58,11 @@ export async function syncCompanyToHubSpot(companyData: any, hubspotToken: strin
       },
       body: JSON.stringify({ properties })
     });
-    if (!updateRes.ok) throw new Error('Failed to update company in HubSpot');
+    if (!updateRes.ok) {
+      const err = await updateRes.text();
+      console.error('HubSpot Update Error:', err);
+      throw new Error(`HubSpot Error: ${err}`);
+    }
   } else {
     // Create new
     const createRes = await fetch(url, {
@@ -69,7 +73,11 @@ export async function syncCompanyToHubSpot(companyData: any, hubspotToken: strin
       },
       body: JSON.stringify({ properties })
     });
-    if (!createRes.ok) throw new Error('Failed to create company in HubSpot');
+    if (!createRes.ok) {
+      const err = await createRes.text();
+      console.error('HubSpot Create Error:', err);
+      throw new Error(`HubSpot Error: ${err}`);
+    }
     const createData = await createRes.json();
     companyId = createData.id;
   }

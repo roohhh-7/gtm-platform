@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Play, Download, Loader2, FileSpreadsheet, Plus, CheckCircle2, Users, Building2, Sparkles } from 'lucide-react';
+import { Play, Download, Loader2, FileSpreadsheet, Plus, CheckCircle2, Users, Building2, Sparkles, CloudUpload } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { MockResearchFlow } from './MockResearchFlow';
@@ -205,6 +205,30 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
     }
   };
 
+  const [isSyncingHubspot, setIsSyncingHubspot] = useState(false);
+  const handleHubspotSync = async () => {
+    setIsSyncingHubspot(true);
+    try {
+      const response = await fetch('/api/integrations/hubspot/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyId: localCompany.id })
+      });
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to sync to HubSpot');
+      }
+      
+      alert('Successfully synced to HubSpot!');
+    } catch (error: any) {
+      console.error(error);
+      alert(error.message);
+    } finally {
+      setIsSyncingHubspot(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Tabs */}
@@ -257,6 +281,18 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
           </span>
         </div>
         <div className="flex items-center gap-2">
+          {activeTab === 'company' && (
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="h-8 gap-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/20 mr-2"
+              onClick={handleHubspotSync}
+              disabled={isSyncingHubspot}
+            >
+              {isSyncingHubspot ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CloudUpload className="w-3.5 h-3.5" />}
+              Push to HubSpot
+            </Button>
+          )}
           <Button variant="secondary" size="sm" className="h-8 gap-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300">
             <Plus className="w-3.5 h-3.5" />
             Add Column

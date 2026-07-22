@@ -8,7 +8,7 @@ import { CompaniesTable } from '@/components/companies/CompaniesTable';
 import { companyService } from '@/services/companies';
 import { CampaignCompany } from '@/types';
 import AddCompanyModal from '@/components/companies/AddCompanyModal';
-import { FileSpreadsheet, Plus, Sparkles, Loader2, CheckCircle2, ChevronDown } from 'lucide-react';
+import { FileSpreadsheet, Plus, Sparkles, Loader2, CheckCircle2, ChevronDown, UploadCloud } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Props = {
@@ -25,6 +25,43 @@ export function CampaignCompaniesTab({ campaignId }: Props) {
   const [enrichingIds, setEnrichingIds] = useState<Set<string>>(new Set());
   const [toast, setToast] = useState('');
   const [isEnrichDropdownOpen, setIsEnrichDropdownOpen] = useState(false);
+  const [isPushingToHubspot, setIsPushingToHubspot] = useState(false);
+
+  const handlePushToHubspot = async () => {
+    if (selectedRows.size === 0) {
+      setToast('Please select companies to push to HubSpot.');
+      setTimeout(() => setToast(''), 3000);
+      return;
+    }
+    
+    setIsPushingToHubspot(true);
+    let successCount = 0;
+    
+    try {
+      const promises = Array.from(selectedRows).map(async (companyId) => {
+        const response = await fetch('/api/integrations/hubspot/push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ companyId })
+        });
+        if (response.ok) successCount++;
+      });
+      
+      await Promise.all(promises);
+      
+      if (successCount > 0) {
+        setToast(`Successfully pushed ${successCount} companies to HubSpot!`);
+      } else {
+        setToast('Failed to push to HubSpot. Please try again.');
+      }
+    } catch (err) {
+      console.error(err);
+      setToast('Failed to push to HubSpot. Please try again.');
+    } finally {
+      setIsPushingToHubspot(false);
+      setTimeout(() => setToast(''), 3000);
+    }
+  };
 
   const fetchCompanies = async () => {
     setLoading(true);
@@ -180,13 +217,15 @@ export function CampaignCompaniesTab({ campaignId }: Props) {
             <Input placeholder="Search companies..." icon={true} className="h-8 text-xs bg-neutral-950 border-neutral-800" />
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={() => setIsAddModalOpen(true)} variant="secondary" size="sm" className="h-8 gap-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300">
-              <Plus className="w-3.5 h-3.5" />
-              Add Row
-            </Button>
-            <Button variant="secondary" size="sm" className="h-8 gap-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300">
-              <Plus className="w-3.5 h-3.5" />
-              Add Column
+            <Button 
+              onClick={handlePushToHubspot} 
+              disabled={isPushingToHubspot || selectedRows.size === 0} 
+              variant="secondary" 
+              size="sm" 
+              className="h-8 gap-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
+            >
+              {isPushingToHubspot ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5" />}
+              Push to Hubspot
             </Button>
             
             <div className="relative">

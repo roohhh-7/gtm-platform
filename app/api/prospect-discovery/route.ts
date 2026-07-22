@@ -53,16 +53,24 @@ export async function POST(req: NextRequest) {
     // 1. Fetch existing domains for this campaign so we don't suggest companies already in the table
     const { data: existingLinks } = await supabase
       .from('campaign_companies')
-      .select('company_id, company:companies(domain)')
+      .select('company_id')
       .eq('campaign_id', campaignId);
       
     const existingDomains = new Set<string>();
-    if (existingLinks) {
-      existingLinks.forEach(link => {
-        if (link.company && link.company.domain) {
-          existingDomains.add(link.company.domain.toLowerCase());
-        }
-      });
+    
+    if (existingLinks && existingLinks.length > 0) {
+      const companyIds = existingLinks.map(l => l.company_id);
+      
+      const { data: existingCompanies } = await supabase
+        .from('companies')
+        .select('domain')
+        .in('id', companyIds);
+        
+      if (existingCompanies) {
+        existingCompanies.forEach(c => {
+          if (c.domain) existingDomains.add(c.domain.toLowerCase());
+        });
+      }
     }
 
     if (!icp.titles?.length && !icp.industries?.length && !icp.company_sizes?.length && !icp.locations?.length && !icp.product_description && !icp.problem_statement && !icp.market_segments?.length && !icp.ideal_customer_characteristics) {

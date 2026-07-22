@@ -22,6 +22,8 @@ export function CampaignProspectDiscoveryTab({ campaignId }: Props) {
   const handleFindCompanies = async (forceRefresh = false) => {
     setLoading(true);
     setError('');
+    setProspects([]);
+    setSelectedIds(new Set());
     
     try {
       const supabase = createClient();

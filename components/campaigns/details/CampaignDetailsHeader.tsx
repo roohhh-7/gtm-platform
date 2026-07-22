@@ -3,18 +3,18 @@ import { Button } from '@/components/ui/Button';
 import { Play, Pause, Pencil } from 'lucide-react';
 
 type Props = {
-  campaignId?: string;
+  campaign?: any;
 };
 
-export function CampaignDetailsHeader({ campaignId }: Props) {
+export function CampaignDetailsHeader({ campaign }: Props) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-50">Enterprise Q3 Outreach</h1>
-          <Badge status="active" />
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-50">{campaign?.name || 'Loading Campaign...'}</h1>
+          <Badge status={campaign?.status || 'active'} />
         </div>
-        <p className="text-sm text-neutral-400 mt-1">Targeting VPs of Engineering at B2B SaaS companies in the US.</p>
+        <p className="text-sm text-neutral-400 mt-1">{campaign?.description || `Targeting companies in the ${campaign?.industry || ''} industry.`}</p>
       </div>
       
       <div className="flex items-center gap-2">

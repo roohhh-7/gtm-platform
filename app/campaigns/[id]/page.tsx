@@ -7,14 +7,16 @@ import { CampaignContactsTab } from '@/components/campaigns/details/CampaignCont
 import { CampaignOutreachTab } from '@/components/campaigns/details/CampaignOutreachTab';
 import { CampaignResearchTab } from '@/components/campaigns/details/CampaignResearchTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import { campaignService } from '@/services/campaigns';
 
 export default async function CampaignDetailsPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ tab?: string }> }) {
   const { id } = await params;
   const { tab } = await searchParams;
+  const { campaign } = await campaignService.getCampaign(id);
   
   return (
     <div className="space-y-6">
-      <CampaignDetailsHeader campaignId={id} />
+      <CampaignDetailsHeader campaign={campaign} />
       
       <Tabs defaultValue={tab || "overview"} className="mt-6">
         <TabsList className="mb-6 flex flex-wrap gap-2">

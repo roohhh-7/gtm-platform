@@ -39,6 +39,17 @@ export const campaignService = {
     return { campaigns: data as Campaign[] | null, error, count };
   },
 
+  async getCampaign(id: string) {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('campaigns')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    return { campaign: data as Campaign | null, error };
+  },
+
   async createCampaign(name: string, industry: string) {
     const supabase = createClient();
     

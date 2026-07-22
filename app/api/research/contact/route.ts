@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
     const prompt = `You are an expert B2B sales researcher. Conduct deep research on the individual: "${contactName}" who works at "${companyName || 'Unknown Company'}".
 Provide your research in JSON format matching exactly this structure:

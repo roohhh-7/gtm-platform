@@ -37,6 +37,36 @@ export function CampaignCompaniesTab({ campaignId }: Props) {
     fetchCompanies();
   }, [campaignId]);
 
+  // Polling for async Clay enrichments
+  useEffect(() => {
+    if (enrichingIds.size === 0) return;
+
+    const interval = setInterval(() => {
+      fetchCompanies();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [enrichingIds.size]);
+
+  // Re-evaluate enrichingIds whenever campaignCompanies changes
+  useEffect(() => {
+    if (enrichingIds.size === 0) return;
+    
+    setEnrichingIds(prev => {
+      const next = new Set(prev);
+      let changed = false;
+      
+      campaignCompanies.forEach(cc => {
+        if (cc.company?.raw_data?._clay_enriched && next.has(cc.company.id)) {
+          next.delete(cc.company.id);
+          changed = true;
+        }
+      });
+      
+      return changed ? next : prev;
+    });
+  }, [campaignCompanies]);
+
   const tableData = campaignCompanies
     .filter(cc => cc.company)
     .map(cc => ({
@@ -92,15 +122,18 @@ export function CampaignCompaniesTab({ campaignId }: Props) {
       
       if (response.ok) {
         const data = await response.json();
-        setToast(`Successfully enriched ${data.enrichedCount} companies!`);
+        setToast(`Sent ${data.enrichedCount} companies to Clay for enrichment!`);
         setTimeout(() => setToast(''), 4000);
-        await fetchCompanies(); // Re-fetch to get dynamic columns
+        // We do NOT clear enrichingIds here. The polling useEffect will clear them as they finish.
+      } else {
+        throw new Error('Failed to start enrichment');
       }
     } catch (err) {
       console.error('Enrichment failed', err);
       setToast('Enrichment failed. Please try again.');
       setTimeout(() => setToast(''), 3000);
-    } finally {
+      
+      // Only on error do we revert the enrichingIds state
       setEnrichingIds(prev => {
         const next = new Set(prev);
         idsToEnrich.forEach(id => next.delete(id));

@@ -33,32 +33,33 @@ export async function POST(req: NextRequest) {
       throw new Error(`Failed to fetch companies: ${fetchError.message}`);
     }
 
-    // Process each company and add mock enriched data
-    for (const company of companies || []) {
-      const existingRawData = company.raw_data || {};
-      
-      const enrichedData = {
-        ...existingRawData,
-        _clay_enriched: true,
-        TYPE: 'Privately Held',
-        DOMAIN: company.domain ? `http://www.${company.domain}` : `http://www.${company.name.toLowerCase().replace(/\s+/g, '')}.com`,
-        COUNTRY: company.country || 'US',
-        LOCALITY: 'Basking Ridge, New Jersey',
-        LOGO_URL: 'https://d878vporrm2hj.cloudfront.net/placeholder-logo.png',
-        TECH_STACK: 'Amazon, Amazon California Region, nginx, jQuery, Drip, YouTube IFrame API, D3 JS, reCAPTCHA',
-        DESCRIPTION: `${company.name} is an innovative company providing global solutions across various industries.`,
-        LINKEDIN_URL: `https://www.linkedin.com/company/${company.domain ? company.domain.split('.')[0] : company.name.toLowerCase().replace(/\s+/g, '')}`,
-      };
+    // Trigger real Clay webhook for each company
+    let successCount = 0;
+    
+    // Process them in parallel for speed, but catch errors to ensure we count successes
+    const promises = (companies || []).map(async (company) => {
+      try {
+        const clayResponse = await fetch('https://api.clay.com/v3/sources/webhook/pull-in-data-from-a-webhook-aa994a31-14dd-46e9-80e0-5fbfe6d16566', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ company_id: company.id, domain: company.domain }),
+        });
 
-      await supabase
-        .from('companies')
-        .update({
-          raw_data: enrichedData
-        })
-        .eq('id', company.id);
-    }
+        if (clayResponse.ok) {
+          successCount++;
+        } else {
+          console.error(`Failed to trigger Clay for ${company.name}: ${clayResponse.status}`);
+        }
+      } catch (err) {
+        console.error(`Error triggering Clay for ${company.name}:`, err);
+      }
+    });
 
-    return NextResponse.json({ success: true, enrichedCount: (companies || []).length });
+    await Promise.all(promises);
+
+    return NextResponse.json({ success: true, enrichedCount: successCount });
   } catch (error: any) {
     console.error('Enrichment API Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

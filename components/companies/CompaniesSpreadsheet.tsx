@@ -35,26 +35,32 @@ type Props = {
 // Custom cell renderers for AG Grid
 const NameCellRenderer = (props: any) => {
   const data = props.data;
-  return data.campaignId ? (
-    <Link href={`/campaigns/${data.campaignId}/companies/${data.id}`} className="text-white hover:underline truncate">
-      {data.name}
-    </Link>
-  ) : (
-    <span className="text-white truncate">{data.name}</span>
+  return (
+    <div className="custom-cell-content">
+      {data.campaignId ? (
+        <Link href={`/campaigns/${data.campaignId}/companies/${data.id}`} className="text-white hover:underline truncate">
+          {data.name}
+        </Link>
+      ) : (
+        <span className="text-white truncate">{data.name}</span>
+      )}
+    </div>
   );
 };
 
 const DomainCellRenderer = (props: any) => {
   return (
-    <a href={`https://${props.value}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline truncate">
-      {props.value || 'website.com'}
-    </a>
+    <div className="custom-cell-content">
+      <a href={`https://${props.value}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline truncate">
+        {props.value || 'website.com'}
+      </a>
+    </div>
   );
 };
 
 const StatusCellRenderer = (props: any) => {
   return (
-    <div className="flex items-center h-full">
+    <div className="custom-cell-content">
       <Badge variant={props.value === 'active' ? 'success' : props.value === 'disqualified' ? 'neutral' : 'warning'}>
         {props.value}
       </Badge>
@@ -66,7 +72,7 @@ const AiMatchCellRenderer = (props: any) => {
   const data = props.data;
   if (data.ai_fit_score !== undefined) {
     return (
-      <div className="flex items-center gap-1.5 h-full">
+      <div className="custom-cell-content gap-1.5">
         <span className="text-emerald-400 font-medium text-xs">{data.ai_fit_score}</span>
         {data.why_recommended?.[0] && (
           <span className="text-[10px] text-neutral-500 max-w-[100px] truncate" title={data.why_recommended[0]}>
@@ -76,16 +82,16 @@ const AiMatchCellRenderer = (props: any) => {
       </div>
     );
   }
-  return <div className="flex text-neutral-600 text-xs h-full items-center">-</div>;
+  return <div className="custom-cell-content text-neutral-600 text-xs">-</div>;
 };
 
 const EnrichStatusCellRenderer = (props: any) => {
   const isEnriching = props.context?.enrichingIds?.has(props.data.id);
-  const isEnriched = props.data.clay_enriched === true; // We'll assume we pass this down eventually if needed
+  const isEnriched = props.data.clay_enriched === true; 
   
   if (isEnriching) {
     return (
-      <div className="flex items-center gap-2 text-indigo-400 text-xs font-medium h-full">
+      <div className="custom-cell-content gap-2 text-indigo-400 text-xs font-medium">
         <Loader2 className="w-3.5 h-3.5 animate-spin" />
         Enriching...
       </div>
@@ -93,14 +99,14 @@ const EnrichStatusCellRenderer = (props: any) => {
   }
   if (isEnriched) {
     return (
-      <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium h-full">
+      <div className="custom-cell-content gap-1.5 text-emerald-400 text-xs font-medium">
         <CheckCircle2 className="w-3.5 h-3.5" />
         Enriched
       </div>
     );
   }
   
-  return <div className="text-neutral-500 text-xs flex items-center h-full">Pending</div>;
+  return <div className="custom-cell-content text-neutral-500 text-xs">Pending</div>;
 };
 
 export function CompaniesSpreadsheet({ data, onSelectionChange, enrichingIds }: Props) {
@@ -154,36 +160,54 @@ export function CompaniesSpreadsheet({ data, onSelectionChange, enrichingIds }: 
     }
   }, [gridApi, onSelectionChange]);
 
-  // Dark theme override styles
+  // Dark theme override styles for AG Grid v36
   const gridStyles = `
-    .ag-theme-quartz-dark {
-      --ag-background-color: transparent;
-      --ag-header-background-color: rgba(23, 23, 23, 0.8);
-      --ag-odd-row-background-color: transparent;
-      --ag-border-color: #262626;
-      --ag-row-border-color: #262626;
-      --ag-header-foreground-color: #a3a3a3;
-      --ag-data-color: #d4d4d4;
-      --ag-row-hover-color: rgba(38, 38, 38, 0.5);
-      --ag-selected-row-background-color: rgba(99, 102, 241, 0.1);
-      --ag-checkbox-checked-color: #6366f1;
-      --ag-font-family: inherit;
-      --ag-font-size: 13px;
-      --ag-cell-horizontal-padding: 16px;
+    .ag-theme-quartz {
+      --ag-background-color: transparent !important;
+      --ag-header-background-color: rgba(23, 23, 23, 0.8) !important;
+      --ag-odd-row-background-color: transparent !important;
+      --ag-border-color: #262626 !important;
+      --ag-row-border-color: #262626 !important;
+      --ag-header-foreground-color: #a3a3a3 !important;
+      --ag-foreground-color: #d4d4d4 !important;
+      --ag-data-color: #d4d4d4 !important;
+      --ag-row-hover-color: rgba(38, 38, 38, 0.5) !important;
+      --ag-selected-row-background-color: rgba(99, 102, 241, 0.1) !important;
+      --ag-checkbox-checked-color: #6366f1 !important;
+      --ag-checkbox-background-color: transparent !important;
+      --ag-font-family: inherit !important;
+      --ag-font-size: 13px !important;
+      --ag-cell-horizontal-padding: 16px !important;
     }
-    .ag-theme-quartz-dark .ag-header-cell {
+    .ag-theme-quartz .ag-header-cell {
       font-weight: 500;
     }
-    .ag-theme-quartz-dark .ag-cell {
+    .ag-theme-quartz .ag-cell-wrapper {
       display: flex;
       align-items: center;
+      width: 100%;
+    }
+    /* Fix missing checkbox visibility due to light theme defaults */
+    .ag-theme-quartz .ag-checkbox-input-wrapper {
+      border-color: #525252;
+    }
+    .ag-theme-quartz .ag-checkbox-input-wrapper.ag-checked {
+      border-color: #6366f1;
+      background-color: #6366f1;
+    }
+    /* Make text renderers inherit the flex alignment safely */
+    .custom-cell-content {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      height: 100%;
     }
   `;
 
   return (
     <div className="w-full h-[600px] flex flex-col relative border border-neutral-800 bg-neutral-900/50 rounded-xl overflow-hidden -mt-2">
       <style dangerouslySetInnerHTML={{ __html: gridStyles }} />
-      <div className="ag-theme-quartz-dark w-full h-full flex-1">
+      <div className="ag-theme-quartz w-full h-full flex-1">
         <AgGridReact
           rowData={data}
           columnDefs={columnDefs}

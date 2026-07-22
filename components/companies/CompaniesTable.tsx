@@ -31,17 +31,29 @@ type Props = {
 export function CompaniesTable({ data, selectedIds = new Set(), onSelectionChange, enrichingIds = new Set() }: Props) {
   // Collect dynamic columns from enriched_data
   const dynamicColumns = React.useMemo(() => {
+    const allowedColumns = [
+      'TYPE',
+      'DOMAIN',
+      'COUNTRY',
+      'LOCALITY',
+      'LOGO_URL',
+      'TECH_STACK',
+      'DESCRIPTION',
+      'LINKEDIN_URL'
+    ];
+    
     const cols = new Set<string>();
     data.forEach(row => {
       if (row.enriched_data) {
-        Object.keys(row.enriched_data).forEach(k => {
-          if (!k.startsWith('_')) {
+        allowedColumns.forEach(k => {
+          if (row.enriched_data![k] !== undefined) {
             cols.add(k);
           }
         });
       }
     });
-    return Array.from(cols);
+    // Return them in the exact order specified by allowedColumns
+    return allowedColumns.filter(col => cols.has(col));
   }, [data]);
 
   const allSelected = data.length > 0 && selectedIds.size === data.length;

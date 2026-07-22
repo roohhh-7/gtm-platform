@@ -40,9 +40,14 @@ export async function POST(req: NextRequest) {
       const enrichedData = {
         ...existingRawData,
         _clay_enriched: true,
-        annual_revenue: `$${Math.floor(Math.random() * 50) + 1}M`,
-        linkedin: `linkedin.com/company/${company.domain ? company.domain.split('.')[0] : company.name.toLowerCase().replace(/\s+/g, '')}`,
-        twitter: `@${company.domain ? company.domain.split('.')[0] : company.name.toLowerCase().replace(/\s+/g, '')}`,
+        TYPE: 'Privately Held',
+        DOMAIN: company.domain ? `http://www.${company.domain}` : `http://www.${company.name.toLowerCase().replace(/\s+/g, '')}.com`,
+        COUNTRY: company.country || 'US',
+        LOCALITY: 'Basking Ridge, New Jersey',
+        LOGO_URL: 'https://d878vporrm2hj.cloudfront.net/placeholder-logo.png',
+        TECH_STACK: 'Amazon, Amazon California Region, nginx, jQuery, Drip, YouTube IFrame API, D3 JS, reCAPTCHA',
+        DESCRIPTION: `${company.name} is an innovative company providing global solutions across various industries.`,
+        LINKEDIN_URL: `https://www.linkedin.com/company/${company.domain ? company.domain.split('.')[0] : company.name.toLowerCase().replace(/\s+/g, '')}`,
       };
 
       await supabase

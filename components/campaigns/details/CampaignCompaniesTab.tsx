@@ -9,6 +9,7 @@ import { companyService } from '@/services/companies';
 import { CampaignCompany } from '@/types';
 import AddCompanyModal from '@/components/companies/AddCompanyModal';
 import { FileSpreadsheet, Plus, Sparkles, Loader2, CheckCircle2, ChevronDown } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 
 type Props = {
   campaignId: string;
@@ -77,9 +78,15 @@ export function CampaignCompaniesTab({ campaignId }: Props) {
     setIsEnrichDropdownOpen(false);
     
     try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const response = await fetch('/api/enrich', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {})
+        },
         body: JSON.stringify({ companyIds: idsToEnrich })
       });
       

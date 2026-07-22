@@ -96,12 +96,19 @@ export interface CompanyResearch {
   ai_summary?: string;
   industry?: string;
   funding?: string;
+  why_now?: string;
+  company_overview?: string;
+  custom_question_answer?: string;
   tech_stack: string[];
   competitors: string[];
   recent_news: { title: string; source: string; date: string }[];
   hiring_signals: string[];
   pain_points: string[];
   buying_signals: { signal: string; strength: 'Low' | 'Medium' | 'High' }[];
+  growth_signals: string[];
+  decision_makers: string[];
+  outreach_angles: string[];
+  timeline: { date: string; event: string }[];
   created_at: string;
   updated_at: string;
 }

@@ -25,6 +25,7 @@ export function CampaignResearchTab({ campaignId }: Props) {
   
   const [loading, setLoading] = useState(true);
   const [researching, setResearching] = useState(false);
+  const [customQuestion, setCustomQuestion] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -78,7 +79,8 @@ export function CampaignResearchTab({ campaignId }: Props) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             companyId: selectedEntity.id,
-            companyName: selectedEntity.name
+            companyName: selectedEntity.name,
+            customQuestion: customQuestion.trim() || undefined
           })
         });
 
@@ -114,6 +116,7 @@ export function CampaignResearchTab({ campaignId }: Props) {
       alert(err.message || "Failed to generate AI research. Please check your API key.");
     } finally {
       setResearching(false);
+      setCustomQuestion("");
     }
   };
 
@@ -183,19 +186,31 @@ export function CampaignResearchTab({ campaignId }: Props) {
                 </div>
                 <h2 className="text-2xl font-semibold text-white tracking-tight">{selectedEntity.name}</h2>
               </div>
-              <Button onClick={handleGenerateResearch} disabled={researching}>
-                {researching ? (
-                  <span className="flex items-center gap-2">
-                    <div className="h-4 w-4 rounded-full border-2 border-neutral-800 border-t-white animate-spin" />
-                    Analyzing...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4" />
-                    Generate Research
-                  </span>
+              <div className="flex items-center gap-3">
+                {selectedEntity.type === 'company' && (
+                  <input
+                    type="text"
+                    placeholder="Ask a specific question (optional)..."
+                    className="w-64 bg-neutral-900 border border-neutral-800 rounded-md px-3 py-1.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    value={customQuestion}
+                    onChange={(e) => setCustomQuestion(e.target.value)}
+                    disabled={researching}
+                  />
                 )}
-              </Button>
+                <Button onClick={handleGenerateResearch} disabled={researching}>
+                  {researching ? (
+                    <span className="flex items-center gap-2">
+                      <div className="h-4 w-4 rounded-full border-2 border-neutral-800 border-t-white animate-spin" />
+                      Analyzing...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      Generate Research
+                    </span>
+                  )}
+                </Button>
+              </div>
             </div>
 
             {selectedEntity.type === 'company' ? (

@@ -10,7 +10,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'GEMINI_API_KEY is not set' }, { status: 500 });
     }
 
-    const { companyId, companyName } = await req.json();
+    const { companyId, companyName, customQuestion } = await req.json();
 
     if (!companyId || !companyName) {
       return NextResponse.json({ error: 'companyId and companyName are required' }, { status: 400 });
@@ -20,11 +20,21 @@ export async function POST(req: Request) {
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = `You are an expert B2B sales researcher. Conduct deep research on the company: "${companyName}".
+${customQuestion ? `The user also asked a specific question: "${customQuestion}". Please answer this in the 'custom_question_answer' field.` : ''}
+
 Provide your research in JSON format matching exactly this structure:
 {
+  "why_now": "Why this company is a good prospect right now.",
+  "company_overview": "A quick snapshot of what the company does.",
   "ai_summary": "A 2-3 sentence summary of what the company does and its market positioning.",
   "industry": "Primary industry (e.g., Enterprise Software, FinTech)",
   "funding": "Latest funding round and amount if known, else 'Private' or 'Public'",
+  "growth_signals": ["Hiring, expansion, employee growth, product launches, funding activity"],
+  "decision_makers": ["Recommended contacts or roles for outreach"],
+  "outreach_angles": ["Personalized messaging ideas for the sales team"],
+  "timeline": [
+    { "date": "Date or timeframe", "event": "A chronological view of major events (funding, launches, hiring, expansion, etc)" }
+  ],
   "tech_stack": ["List", "of", "technologies", "used", "by", "company"],
   "competitors": ["Competitor A", "Competitor B"],
   "recent_news": [
@@ -34,7 +44,7 @@ Provide your research in JSON format matching exactly this structure:
   "pain_points": ["Likely challenges or pain points this company faces at their current stage"],
   "buying_signals": [
     { "signal": "Event or indicator that they might buy software soon", "strength": "High, Medium, or Low" }
-  ]
+  ]${customQuestion ? `,\n  "custom_question_answer": "Your answer to the custom question asked by the user."` : ''}
 }
 
 Return ONLY valid JSON. Do not include markdown formatting or extra text.`;

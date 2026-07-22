@@ -17,31 +17,84 @@ type TableRowData = {
   tags: string[];
   ai_fit_score?: number;
   why_recommended?: string[];
+  clay_enriched?: boolean;
+  enriched_data?: Record<string, any>;
 };
 
 type Props = {
   data: TableRowData[];
+  selectedIds?: Set<string>;
+  onSelectionChange?: (ids: Set<string>) => void;
+  enrichingIds?: Set<string>;
 };
 
-export function CompaniesTable({ data }: Props) {
+export function CompaniesTable({ data, selectedIds = new Set(), onSelectionChange, enrichingIds = new Set() }: Props) {
+  // Collect dynamic columns from enriched_data
+  const dynamicColumns = React.useMemo(() => {
+    const cols = new Set<string>();
+    data.forEach(row => {
+      if (row.enriched_data) {
+        Object.keys(row.enriched_data).forEach(k => cols.add(k));
+      }
+    });
+    return Array.from(cols);
+  }, [data]);
+
+  const allSelected = data.length > 0 && selectedIds.size === data.length;
+  
+  const toggleAll = () => {
+    if (!onSelectionChange) return;
+    if (allSelected) {
+      onSelectionChange(new Set());
+    } else {
+      onSelectionChange(new Set(data.map(d => d.id)));
+    }
+  };
+
+  const toggleRow = (id: string) => {
+    if (!onSelectionChange) return;
+    const next = new Set(selectedIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    onSelectionChange(next);
+  };
+
   return (
     <div className="border border-neutral-800 bg-neutral-900/50 rounded-xl overflow-x-auto -mt-2">
       <Table className="min-w-max border-collapse">
         <TableHeader>
           <TableRow className="border-neutral-800 bg-neutral-900/80 hover:bg-neutral-900/80">
-            <TableHead className="w-12 border-r border-neutral-800 text-center">#</TableHead>
+            <TableHead className="w-12 border-r border-neutral-800 text-center">
+              {onSelectionChange && (
+                <input 
+                  type="checkbox" 
+                  checked={allSelected}
+                  onChange={toggleAll}
+                  className="rounded border-neutral-700 bg-neutral-800/50 checked:bg-indigo-500 checked:border-indigo-500"
+                />
+              )}
+            </TableHead>
             <TableHead className="w-48 border-r border-neutral-800">Company</TableHead>
             <TableHead className="w-40 border-r border-neutral-800">Domain</TableHead>
             <TableHead className="w-48 border-r border-neutral-800">Industry</TableHead>
             <TableHead className="w-32 border-r border-neutral-800">Employees</TableHead>
             <TableHead className="w-32 border-r border-neutral-800">Country</TableHead>
             <TableHead className="w-32 border-r border-neutral-800">Status</TableHead>
-            <TableHead className="w-40 bg-indigo-500/5 text-indigo-300">
+            <TableHead className="w-40 bg-indigo-500/5 text-indigo-300 border-r border-neutral-800">
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
                 AI Match
               </div>
             </TableHead>
+            {dynamicColumns.map(col => (
+              <TableHead key={col} className="w-32 border-r border-neutral-800 capitalize">
+                {col.replace(/_/g, ' ')}
+              </TableHead>
+            ))}
+            <TableHead className="w-32 text-center">Enrichment</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -53,9 +106,18 @@ export function CompaniesTable({ data }: Props) {
             </TableRow>
           ) : (
             data.map((company, index) => (
-              <TableRow key={company.id} className="border-neutral-800 hover:bg-neutral-800/30">
+              <TableRow key={company.id} className={`border-neutral-800 hover:bg-neutral-800/30 ${selectedIds.has(company.id) ? 'bg-indigo-500/5' : ''}`}>
                 <TableCell className="border-r border-neutral-800 text-center text-neutral-500 text-xs">
-                  {index + 1}
+                  {onSelectionChange ? (
+                    <input 
+                      type="checkbox" 
+                      checked={selectedIds.has(company.id)}
+                      onChange={() => toggleRow(company.id)}
+                      className="rounded border-neutral-700 bg-neutral-800/50 checked:bg-indigo-500 checked:border-indigo-500"
+                    />
+                  ) : (
+                    index + 1
+                  )}
                 </TableCell>
                 <TableCell className="border-r border-neutral-800 font-medium text-white">
                   {company.campaignId ? (
@@ -85,7 +147,7 @@ export function CompaniesTable({ data }: Props) {
                     {company.status}
                   </Badge>
                 </TableCell>
-                <TableCell className="bg-indigo-500/5">
+                <TableCell className="border-r border-neutral-800 bg-indigo-500/5">
                   {company.ai_fit_score !== undefined ? (
                     <div className="flex items-center justify-center gap-1.5">
                       <span className="text-emerald-400 font-medium text-xs">{company.ai_fit_score}</span>
@@ -97,6 +159,28 @@ export function CompaniesTable({ data }: Props) {
                     </div>
                   ) : (
                     <div className="flex justify-center text-neutral-600 text-xs">-</div>
+                  )}
+                </TableCell>
+                {dynamicColumns.map(col => (
+                  <TableCell key={col} className="border-r border-neutral-800 text-neutral-300">
+                    <span className="truncate max-w-[140px] block">
+                      {company.enriched_data?.[col] ? String(company.enriched_data[col]) : '-'}
+                    </span>
+                  </TableCell>
+                ))}
+                <TableCell className="text-center">
+                  {enrichingIds.has(company.id) ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-400">
+                      <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Enriching...
+                    </span>
+                  ) : company.clay_enriched ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-400">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Enriched
+                    </span>
+                  ) : (
+                    <span className="text-xs text-neutral-500">Pending</span>
                   )}
                 </TableCell>
               </TableRow>

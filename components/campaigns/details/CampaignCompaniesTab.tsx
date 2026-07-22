@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { CompaniesSpreadsheet } from '@/components/companies/CompaniesSpreadsheet';
+import { CompaniesTable } from '@/components/companies/CompaniesTable';
 import { companyService } from '@/services/companies';
 import { CampaignCompany } from '@/types';
 import AddCompanyModal from '@/components/companies/AddCompanyModal';
-import { FileSpreadsheet, Plus, Download, Sparkles, Loader2, CheckCircle2 } from 'lucide-react';
+import { FileSpreadsheet, Plus, Sparkles, Loader2, CheckCircle2, ChevronDown } from 'lucide-react';
 
 type Props = {
   campaignId: string;
@@ -20,9 +20,10 @@ export function CampaignCompaniesTab({ campaignId }: Props) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   
   // Selection and Enrichment State
-  const [selectedRows, setSelectedRows] = useState<any[]>([]);
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [enrichingIds, setEnrichingIds] = useState<Set<string>>(new Set());
   const [toast, setToast] = useState('');
+  const [isEnrichDropdownOpen, setIsEnrichDropdownOpen] = useState(false);
 
   const fetchCompanies = async () => {
     setLoading(true);
@@ -49,55 +50,56 @@ export function CampaignCompaniesTab({ campaignId }: Props) {
       tags: cc.company!.tags || [],
       ai_fit_score: cc.ai_fit_score,
       why_recommended: cc.why_recommended,
-      clay_enriched: cc.company!.raw_data?._clay_enriched === true
+      clay_enriched: cc.company!.raw_data?._clay_enriched === true,
+      enriched_data: cc.company!.raw_data?._clay_enriched ? cc.company!.raw_data : undefined
     }));
 
-  const handleEnrichSelected = async () => {
-    if (selectedRows.length === 0) return;
+  const handleEnrich = async (type: 'selected' | 'all') => {
+    let idsToEnrich: string[] = [];
     
-    // Add all selected ids to enriching set
-    const idsToEnrich = selectedRows.map(r => r.id);
-    setEnrichingIds(prev => new Set([...prev, ...idsToEnrich]));
-    
-    // In a real application, you would either send all IDs to a bulk endpoint
-    // or iterate through them. Here we iterate and call the trigger endpoint.
-    let successCount = 0;
-    
-    for (const row of selectedRows) {
-      if (row.clay_enriched) continue; // Skip already enriched
-      
-      try {
-        const response = await fetch('/api/clay/trigger', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            company_id: row.id, 
-            domain: row.domain 
-          })
-        });
-        
-        if (response.ok) {
-          successCount++;
-        }
-      } catch (err) {
-        console.error(`Failed to enrich ${row.name}`, err);
-      }
+    if (type === 'selected') {
+      if (selectedRows.size === 0) return;
+      idsToEnrich = Array.from(selectedRows);
+    } else {
+      idsToEnrich = tableData.map(r => r.id);
     }
     
-    // Typically, Clay enrichment is asynchronous (webhook returns later).
-    // For UI demonstration, we'll keep them in enriching state for a few seconds.
-    setToast(`Sent ${successCount} companies to Clay for enrichment!`);
-    setTimeout(() => setToast(''), 4000);
+    // Filter out already enriched companies
+    idsToEnrich = idsToEnrich.filter(id => !tableData.find(r => r.id === id)?.clay_enriched);
     
-    setTimeout(() => {
+    if (idsToEnrich.length === 0) {
+      setToast('Selected companies are already enriched.');
+      setTimeout(() => setToast(''), 3000);
+      return;
+    }
+
+    setEnrichingIds(prev => new Set([...prev, ...idsToEnrich]));
+    setIsEnrichDropdownOpen(false);
+    
+    try {
+      const response = await fetch('/api/enrich', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyIds: idsToEnrich })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setToast(`Successfully enriched ${data.enrichedCount} companies!`);
+        setTimeout(() => setToast(''), 4000);
+        await fetchCompanies(); // Re-fetch to get dynamic columns
+      }
+    } catch (err) {
+      console.error('Enrichment failed', err);
+      setToast('Enrichment failed. Please try again.');
+      setTimeout(() => setToast(''), 3000);
+    } finally {
       setEnrichingIds(prev => {
         const next = new Set(prev);
         idsToEnrich.forEach(id => next.delete(id));
         return next;
       });
-      // Optionally re-fetch to get updated data if webhooks returned fast enough
-      fetchCompanies();
-    }, 3000);
+    }
   };
 
   return (
@@ -121,11 +123,11 @@ export function CampaignCompaniesTab({ campaignId }: Props) {
           <span className="text-neutral-400">
             {tableData.length} {tableData.length === 1 ? 'row' : 'rows'}
           </span>
-          {selectedRows.length > 0 && (
+          {selectedRows.size > 0 && (
             <>
               <div className="h-4 w-px bg-neutral-700" />
               <span className="text-indigo-400 font-medium">
-                {selectedRows.length} selected
+                {selectedRows.size} selected
               </span>
             </>
           )}
@@ -136,22 +138,6 @@ export function CampaignCompaniesTab({ campaignId }: Props) {
             <Input placeholder="Search companies..." icon={true} className="h-8 text-xs bg-neutral-950 border-neutral-800" />
           </div>
           <div className="flex items-center gap-2">
-            {selectedRows.length > 0 && (
-              <Button 
-                onClick={handleEnrichSelected}
-                variant="secondary" 
-                size="sm" 
-                className="h-8 gap-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 mr-2"
-                disabled={enrichingIds.size > 0}
-              >
-                {enrichingIds.size > 0 ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Sparkles className="w-3.5 h-3.5" />
-                )}
-                Enrich Selected
-              </Button>
-            )}
             <Button onClick={() => setIsAddModalOpen(true)} variant="secondary" size="sm" className="h-8 gap-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300">
               <Plus className="w-3.5 h-3.5" />
               Add Row
@@ -160,10 +146,42 @@ export function CampaignCompaniesTab({ campaignId }: Props) {
               <Plus className="w-3.5 h-3.5" />
               Add Column
             </Button>
-            <Button variant="secondary" size="sm" className="h-8 gap-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300">
-              <Download className="w-3.5 h-3.5" />
-              Export CSV
-            </Button>
+            
+            <div className="relative">
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                className="h-8 gap-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20"
+                onClick={() => setIsEnrichDropdownOpen(!isEnrichDropdownOpen)}
+                disabled={enrichingIds.size > 0}
+              >
+                {enrichingIds.size > 0 ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5" />
+                )}
+                Enrich
+                <ChevronDown className="w-3 h-3 opacity-70" />
+              </Button>
+              
+              {isEnrichDropdownOpen && (
+                <div className="absolute right-0 mt-1 w-40 bg-neutral-900 border border-neutral-800 rounded-md shadow-lg z-10 overflow-hidden">
+                  <button 
+                    className="w-full text-left px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-800 transition-colors"
+                    onClick={() => handleEnrich('all')}
+                  >
+                    Enrich Every Row
+                  </button>
+                  <button 
+                    className="w-full text-left px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => handleEnrich('selected')}
+                    disabled={selectedRows.size === 0}
+                  >
+                    Enrich Selected
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -174,8 +192,9 @@ export function CampaignCompaniesTab({ campaignId }: Props) {
           <div className="py-12 flex justify-center text-neutral-500">Loading companies...</div>
         </Card>
       ) : (
-        <CompaniesSpreadsheet 
+        <CompaniesTable 
           data={tableData} 
+          selectedIds={selectedRows}
           onSelectionChange={setSelectedRows}
           enrichingIds={enrichingIds}
         />

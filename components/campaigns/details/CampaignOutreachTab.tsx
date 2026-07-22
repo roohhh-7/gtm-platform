@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Mail, RefreshCw, Check, Sparkles, User } from 'lucide-react';
+import { Mail, RefreshCw, Check, Sparkles, User, ChevronDown, ChevronRight, Building2 } from 'lucide-react';
 import { contactService } from '@/services/contacts';
 import { outreachService } from '@/services/outreach';
-import { researchService } from '@/services/research';
 import { CampaignContact, OutreachEmail } from '@/types';
 
 type Props = {
@@ -15,6 +14,7 @@ type Props = {
 
 export function CampaignOutreachTab({ campaignId }: Props) {
   const [contacts, setContacts] = useState<CampaignContact[]>([]);
+  const [emails, setEmails] = useState<OutreachEmail[]>([]);
   const [selectedContact, setSelectedContact] = useState<CampaignContact | null>(null);
   
   const [outreachEmail, setOutreachEmail] = useState<OutreachEmail | null>(null);
@@ -22,115 +22,180 @@ export function CampaignOutreachTab({ campaignId }: Props) {
   const [body, setBody] = useState('');
   
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [expandedCompanies, setExpandedCompanies] = useState<Record<string, boolean>>({});
+  const [generatingCompanies, setGeneratingCompanies] = useState<Record<string, boolean>>({});
+  const [generatingIndividual, setGeneratingIndividual] = useState(false);
 
   useEffect(() => {
-    const fetchContacts = async () => {
+    const fetchData = async () => {
       setLoading(true);
-      const { campaignContacts } = await contactService.getCampaignContacts(campaignId);
-      if (campaignContacts) {
-        setContacts(campaignContacts);
-        if (campaignContacts.length > 0) {
-          setSelectedContact(campaignContacts[0]);
+      const [contactsRes, emailsRes] = await Promise.all([
+        contactService.getCampaignContacts(campaignId),
+        outreachService.getCampaignOutreachEmails(campaignId)
+      ]);
+      
+      if (contactsRes.campaignContacts) {
+        setContacts(contactsRes.campaignContacts);
+        
+        // Expand first company by default
+        if (contactsRes.campaignContacts.length > 0) {
+          const firstCompanyId = contactsRes.campaignContacts[0].contact?.company_id;
+          if (firstCompanyId) {
+            setExpandedCompanies({ [firstCompanyId]: true });
+          }
+          setSelectedContact(contactsRes.campaignContacts[0]);
         }
+      }
+      
+      if (emailsRes.outreachEmails) {
+        setEmails(emailsRes.outreachEmails);
       }
       setLoading(false);
     };
-    fetchContacts();
+    fetchData();
   }, [campaignId]);
 
+  // Sync selected contact's email from emails array
   useEffect(() => {
-    if (!selectedContact) return;
-
-    const fetchEmail = async () => {
-      const { outreachEmail } = await outreachService.getOutreachEmail(campaignId, selectedContact.contact_id);
-      setOutreachEmail(outreachEmail);
-      if (outreachEmail) {
-        setSubject(outreachEmail.subject);
-        setBody(outreachEmail.body);
-      } else {
-        setSubject('');
-        setBody('');
-      }
-    };
-    
-    fetchEmail();
-  }, [selectedContact, campaignId]);
-
-  const handleGenerate = async () => {
-    if (!selectedContact) return;
-    setGenerating(true);
-    
-    // In a real app, this would hit an API endpoint that calls OpenAI/Anthropic
-    // using the contact's company_id to fetch CompanyResearch and contact_id for ContactResearch
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 2500));
-    
-    const companyName = selectedContact.contact?.company?.name || 'your company';
-    const firstName = selectedContact.contact?.name?.split(' ')[0] || 'there';
-    
-    const generatedSubject = `Quick question about ${companyName}'s infrastructure scaling`;
-    const generatedBody = `Hi ${firstName},
-    
-Saw your recent talk at GTMConf about how ${companyName} migrated to a serverless architecture—really impressive results on the latency reduction.
-
-I'm reaching out because we help engineering teams like yours manage the deployment complexity that usually comes with serverless setups. Orbital automatically maps dependencies and visualizes bottlenecks before they hit production.
-
-Would you be open to a quick 10-minute chat next week to see if this could save your team some time?
-
-Best,
-Rohit`;
-
-    const contextUsed = [
-      "Speaker at GTMConf 2023",
-      `${companyName} uses Serverless`,
-      "Pain point: Deployment complexity"
-    ];
-
-    const { outreachEmail: savedEmail } = await outreachService.saveOutreachEmail(
-      campaignId,
-      selectedContact.contact_id,
-      {
-        subject: generatedSubject,
-        body: generatedBody,
-        status: 'draft',
-        context_used: contextUsed
-      }
-    );
-
-    if (savedEmail) {
-      setOutreachEmail(savedEmail);
-      setSubject(savedEmail.subject);
-      setBody(savedEmail.body);
+    if (!selectedContact) {
+      setOutreachEmail(null);
+      return;
     }
     
-    setGenerating(false);
+    const email = emails.find(e => e.contact_id === selectedContact.contact_id);
+    setOutreachEmail(email || null);
+    setSubject(email?.subject || '');
+    setBody(email?.body || '');
+  }, [selectedContact, emails]);
+
+  const groupedContacts = useMemo(() => {
+    const groups: Record<string, { companyName: string, companyId: string, contacts: CampaignContact[] }> = {};
+    contacts.forEach(c => {
+      const companyId = c.contact?.company_id || 'unknown';
+      const companyName = c.contact?.company?.name || 'Unknown Company';
+      
+      if (!groups[companyId]) {
+        groups[companyId] = { companyId, companyName, contacts: [] };
+      }
+      groups[companyId].contacts.push(c);
+    });
+    return groups;
+  }, [contacts]);
+
+  const toggleCompany = (companyId: string) => {
+    setExpandedCompanies(prev => ({
+      ...prev,
+      [companyId]: !prev[companyId]
+    }));
+  };
+
+  const generateForContact = async (c: CampaignContact) => {
+    if (!c.contact?.company_id) return null;
+    
+    try {
+      const res = await fetch('/api/outreach/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          campaignId,
+          contactId: c.contact_id,
+          companyId: c.contact.company_id,
+          contactName: c.contact.name,
+          contactRole: c.contact.role,
+          companyName: c.contact.company?.name
+        })
+      });
+      
+      const data = await res.json();
+      if (data.subject && data.body) {
+        const { outreachEmail: savedEmail } = await outreachService.saveOutreachEmail(
+          campaignId,
+          c.contact_id,
+          {
+            subject: data.subject,
+            body: data.body,
+            status: 'draft',
+            context_used: data.context_used || []
+          }
+        );
+        return savedEmail;
+      }
+    } catch (err) {
+      console.error("Failed generating for", c.contact?.name, err);
+    }
+    return null;
+  };
+
+  const handleGenerateCompany = async (e: React.MouseEvent, companyId: string) => {
+    e.stopPropagation(); // prevent accordion toggle
+    
+    const group = groupedContacts[companyId];
+    if (!group) return;
+    
+    setGeneratingCompanies(prev => ({ ...prev, [companyId]: true }));
+    setExpandedCompanies(prev => ({ ...prev, [companyId]: true })); // ensure open
+    
+    // Generate sequentially to avoid rate limits
+    for (const c of group.contacts) {
+      // Skip if approved
+      const existing = emails.find(em => em.contact_id === c.contact_id);
+      if (existing?.status === 'approved') continue;
+      
+      const savedEmail = await generateForContact(c);
+      if (savedEmail) {
+        setEmails(prev => {
+          const idx = prev.findIndex(em => em.id === savedEmail.id);
+          if (idx >= 0) {
+            const copy = [...prev];
+            copy[idx] = savedEmail;
+            return copy;
+          }
+          return [...prev, savedEmail];
+        });
+      }
+    }
+    
+    setGeneratingCompanies(prev => ({ ...prev, [companyId]: false }));
+  };
+
+  const handleGenerateIndividual = async () => {
+    if (!selectedContact) return;
+    setGeneratingIndividual(true);
+    
+    const savedEmail = await generateForContact(selectedContact);
+    if (savedEmail) {
+      setEmails(prev => {
+        const idx = prev.findIndex(em => em.id === savedEmail.id);
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = savedEmail;
+          return copy;
+        }
+        return [...prev, savedEmail];
+      });
+    }
+    
+    setGeneratingIndividual(false);
   };
 
   const handleApprove = async () => {
-    if (!outreachEmail) return;
+    if (!outreachEmail || !selectedContact) return;
     setSaving(true);
     
-    // First save any edits
-    await outreachService.saveOutreachEmail(campaignId, selectedContact!.contact_id, {
+    await outreachService.saveOutreachEmail(campaignId, selectedContact.contact_id, {
       subject,
       body,
       status: 'approved'
     });
     
-    // Update local state
-    setOutreachEmail(prev => prev ? { ...prev, subject, body, status: 'approved' } : null);
+    setEmails(prev => prev.map(em => 
+      em.id === outreachEmail.id ? { ...em, subject, body, status: 'approved' } : em
+    ));
     
-    // Also update the campaign_contact status to 'sent' (or 'approved' depending on workflow)
-    await contactService.updateCampaignContactStatus(campaignId, selectedContact!.contact_id, 'sent');
-    
-    // Update local contacts list
+    await contactService.updateCampaignContactStatus(campaignId, selectedContact.contact_id, 'sent');
     setContacts(prev => prev.map(c => 
-      c.contact_id === selectedContact!.contact_id 
-        ? { ...c, status: 'sent' } 
-        : c
+      c.contact_id === selectedContact.contact_id ? { ...c, status: 'sent' } : c
     ));
     
     setSaving(false);
@@ -142,37 +207,91 @@ Rohit`;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 h-[700px]">
-      {/* Sidebar: List of contacts */}
+      {/* Sidebar: Grouped list of contacts */}
       <Card className="col-span-1 p-0 flex flex-col bg-neutral-900 border-neutral-800">
-        <div className="p-4 border-b border-neutral-800">
-          <h2 className="text-sm font-medium text-neutral-200">Pending Outreach</h2>
+        <div className="p-4 border-b border-neutral-800 flex justify-between items-center">
+          <h2 className="text-sm font-medium text-neutral-200">Companies & Contacts</h2>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
-          {contacts.length === 0 ? (
+        <div className="flex-1 overflow-y-auto p-3 space-y-3">
+          {Object.keys(groupedContacts).length === 0 ? (
             <div className="text-center text-sm text-neutral-500 py-4">No contacts added yet.</div>
           ) : (
-            contacts.map(c => (
-              <div 
-                key={c.contact_id}
-                onClick={() => setSelectedContact(c)}
-                className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                  selectedContact?.contact_id === c.contact_id 
-                    ? 'bg-neutral-800 border-neutral-700' 
-                    : 'border-transparent hover:bg-neutral-800/50'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="font-medium text-neutral-200 text-sm">{c.contact?.name}</div>
-                  {c.status === 'sent' && (
-                    <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+            Object.values(groupedContacts).map(group => {
+              const isExpanded = expandedCompanies[group.companyId];
+              const isGenerating = generatingCompanies[group.companyId];
+              
+              // Calculate how many contacts have emails
+              const contactsWithEmails = group.contacts.filter(c => emails.some(e => e.contact_id === c.contact_id)).length;
+              const totalContacts = group.contacts.length;
+              const allDone = contactsWithEmails === totalContacts && totalContacts > 0;
+
+              return (
+                <div key={group.companyId} className="border border-neutral-800 rounded-lg overflow-hidden bg-neutral-950">
+                  {/* Company Header */}
+                  <div 
+                    className="flex items-center justify-between p-3 bg-neutral-900/50 cursor-pointer hover:bg-neutral-800/50 transition-colors"
+                    onClick={() => toggleCompany(group.companyId)}
+                  >
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      {isExpanded ? <ChevronDown className="h-4 w-4 text-neutral-500 shrink-0" /> : <ChevronRight className="h-4 w-4 text-neutral-500 shrink-0" />}
+                      <Building2 className="h-4 w-4 text-neutral-400 shrink-0" />
+                      <span className="font-medium text-neutral-200 text-sm truncate">{group.companyName}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-neutral-500">{contactsWithEmails}/{totalContacts}</span>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className={`h-7 px-2 text-xs ${allDone ? 'text-emerald-400' : 'text-indigo-400 hover:text-indigo-300'}`}
+                        onClick={(e) => handleGenerateCompany(e, group.companyId)}
+                        disabled={isGenerating || allDone}
+                      >
+                        {isGenerating ? (
+                          <RefreshCw className="h-3 w-3 animate-spin" />
+                        ) : allDone ? (
+                          <Check className="h-3 w-3" />
+                        ) : (
+                          <Sparkles className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Contacts List */}
+                  {isExpanded && (
+                    <div className="divide-y divide-neutral-800/50 border-t border-neutral-800/50">
+                      {group.contacts.map(c => {
+                        const hasEmail = emails.some(e => e.contact_id === c.contact_id);
+                        return (
+                          <div 
+                            key={c.contact_id}
+                            onClick={() => setSelectedContact(c)}
+                            className={`p-3 pl-10 cursor-pointer transition-colors flex items-center justify-between ${
+                              selectedContact?.contact_id === c.contact_id 
+                                ? 'bg-neutral-800/60' 
+                                : 'hover:bg-neutral-800/30'
+                            }`}
+                          >
+                            <div className="overflow-hidden">
+                              <div className="font-medium text-neutral-300 text-sm truncate">{c.contact?.name}</div>
+                              <div className="text-xs text-neutral-500 mt-0.5 truncate">{c.contact?.role}</div>
+                            </div>
+                            <div>
+                              {c.status === 'sent' ? (
+                                <span className="h-2 w-2 rounded-full bg-emerald-500 block"></span>
+                              ) : hasEmail ? (
+                                <Mail className="h-3.5 w-3.5 text-indigo-400" />
+                              ) : null}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
-                <div className="text-xs text-neutral-500 mt-1 truncate">
-                  {c.contact?.role} @ {c.contact?.company?.name}
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </Card>
@@ -192,8 +311,8 @@ Rohit`;
             <p className="text-sm text-neutral-400 mb-6 max-w-md">
               We will use the intelligence gathered in the Research tab to craft a hyper-personalized email for {selectedContact.contact?.name}.
             </p>
-            <Button onClick={handleGenerate} disabled={generating} className="gap-2">
-              {generating ? (
+            <Button onClick={handleGenerateIndividual} disabled={generatingIndividual || generatingCompanies[selectedContact.contact?.company_id || '']} className="gap-2">
+              {generatingIndividual || generatingCompanies[selectedContact.contact?.company_id || ''] ? (
                 <>
                   <div className="h-4 w-4 rounded-full border-2 border-neutral-800 border-t-white animate-spin" />
                   Writing Email...
@@ -216,13 +335,13 @@ Rohit`;
               
               <div className="flex items-center gap-2">
                 <Button 
-                  onClick={handleGenerate} 
-                  disabled={generating || outreachEmail.status === 'approved'} 
+                  onClick={handleGenerateIndividual} 
+                  disabled={generatingIndividual || generatingCompanies[selectedContact.contact?.company_id || ''] || outreachEmail.status === 'approved'} 
                   variant="ghost" 
                   size="sm" 
                   className="gap-2 text-neutral-400"
                 >
-                  <RefreshCw className={`h-3 w-3 ${generating ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`h-3 w-3 ${generatingIndividual ? 'animate-spin' : ''}`} />
                   Regenerate
                 </Button>
                 

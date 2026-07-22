@@ -76,29 +76,17 @@ export function CompaniesTable({ data, selectedIds = new Set(), onSelectionChang
 
   // Collect dynamic columns from enriched_data
   const dynamicColumns = React.useMemo(() => {
-    const allowedColumns = [
-      'TYPE',
-      'DOMAIN',
-      'COUNTRY',
-      'LOCALITY',
-      'LOGO_URL',
-      'TECH_STACK',
-      'DESCRIPTION',
-      'LINKEDIN_URL'
-    ];
-    
     const cols = new Set<string>();
     data.forEach(row => {
       if (row.enriched_data) {
-        allowedColumns.forEach(k => {
-          if (row.enriched_data![k] !== undefined) {
+        Object.keys(row.enriched_data).forEach(k => {
+          if (k !== '_clay_enriched') {
             cols.add(k);
           }
         });
       }
     });
-    // Return them in the exact order specified by allowedColumns
-    return allowedColumns.filter(col => cols.has(col));
+    return Array.from(cols);
   }, [data]);
 
   const allSelected = data.length > 0 && selectedIds.size === data.length;

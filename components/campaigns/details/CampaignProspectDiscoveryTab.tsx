@@ -86,6 +86,7 @@ export function CampaignProspectDiscoveryTab({ campaignId }: Props) {
       
     } catch (err: any) {
       setError(err.message);
+    } finally {
       setSaving(false);
     }
   };

@@ -32,7 +32,7 @@ export function CampaignDetailsHeader({ campaignId }: Props) {
           </h1>
           <Badge status={campaign?.status || 'active'} />
         </div>
-        <p className="text-sm text-neutral-400 mt-1">{campaign?.description || `Targeting companies in the ${campaign?.industry || ''} industry.`}</p>
+        <p className="text-sm text-neutral-400 mt-1">Targeting companies in the {campaign?.industry || ''} industry.</p>
       </div>
       
       <div className="flex items-center gap-2">

@@ -17,7 +17,8 @@ export async function POST(req: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // Vercel deployment might not have 1.5-flash available yet in some regions/tiers
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
 
     const prompt = `You are an expert B2B sales researcher. Conduct deep research on the company: "${companyName}".
 ${customQuestion ? `The user also asked a specific question: "${customQuestion}". Please answer this in the 'custom_question_answer' field.` : ''}

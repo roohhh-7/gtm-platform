@@ -95,11 +95,13 @@ export function CampaignCompaniesTab({ campaignId }: Props) {
       idsToEnrich = tableData.map(r => r.id);
     }
     
-    // Filter out already enriched companies
-    idsToEnrich = idsToEnrich.filter(id => !tableData.find(r => r.id === id)?.clay_enriched);
+    // Filter out already enriched companies ONLY if enriching all
+    if (type === 'all') {
+      idsToEnrich = idsToEnrich.filter(id => !tableData.find(r => r.id === id)?.clay_enriched);
+    }
     
     if (idsToEnrich.length === 0) {
-      setToast('Selected companies are already enriched.');
+      setToast('No new companies to enrich.');
       setTimeout(() => setToast(''), 3000);
       return;
     }

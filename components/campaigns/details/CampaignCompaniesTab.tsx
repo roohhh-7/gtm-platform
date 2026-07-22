@@ -222,7 +222,7 @@ export function CampaignCompaniesTab({ campaignId }: Props) {
               disabled={isPushingToHubspot || selectedRows.size === 0} 
               variant="secondary" 
               size="sm" 
-              className="h-8 gap-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
+              className="h-8 gap-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/20 disabled:opacity-50"
             >
               {isPushingToHubspot ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5" />}
               Push to Hubspot

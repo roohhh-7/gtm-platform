@@ -2,7 +2,8 @@ import React from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
-import { CheckCircle2, MoreHorizontal, X } from 'lucide-react';
+import { CheckCircle2, MoreHorizontal, X, Copy, Download, Check } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 
 type TableRowData = {
@@ -30,6 +31,48 @@ type Props = {
 
 export function CompaniesTable({ data, selectedIds = new Set(), onSelectionChange, enrichingIds = new Set() }: Props) {
   const [selectedCellText, setSelectedCellText] = React.useState<string | null>(null);
+  const [hasCopied, setHasCopied] = React.useState(false);
+
+  const handleCopy = () => {
+    if (selectedCellText) {
+      navigator.clipboard.writeText(selectedCellText);
+      setHasCopied(true);
+      setTimeout(() => setHasCopied(false), 2000);
+    }
+  };
+
+  const handleExportCSV = () => {
+    // Basic CSV generation
+    const headers = ['Name', 'Domain', 'Industry', 'Employees', 'Country', 'Status', 'AI Score', ...dynamicColumns];
+    const rows = data.map(company => {
+      const rowData = [
+        `"${company.name || ''}"`,
+        `"${company.domain || ''}"`,
+        `"${company.industry || ''}"`,
+        `"${company.employees || ''}"`,
+        `"${company.country || ''}"`,
+        `"${company.status || ''}"`,
+        `"${company.ai_fit_score || ''}"`
+      ];
+      
+      dynamicColumns.forEach(col => {
+        const val = company.enriched_data?.[col] ? String(company.enriched_data[col]).replace(/"/g, '""') : '';
+        rowData.push(`"${val}"`);
+      });
+      
+      return rowData.join(',');
+    });
+    
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'campaign_companies_export.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Collect dynamic columns from enriched_data
   const dynamicColumns = React.useMemo(() => {
@@ -226,6 +269,20 @@ export function CompaniesTable({ data, selectedIds = new Set(), onSelectionChang
           )}
         </TableBody>
       </Table>
+      
+      {/* Export Table Button */}
+      <div className="flex justify-end p-4 border-t border-neutral-800 bg-neutral-900/50">
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          className="h-8 gap-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20"
+          onClick={handleExportCSV}
+          disabled={data.length === 0}
+        >
+          <Download className="w-3.5 h-3.5" />
+          Export Table
+        </Button>
+      </div>
 
       {/* Cell Content Modal */}
       {selectedCellText && (
@@ -245,7 +302,14 @@ export function CompaniesTable({ data, selectedIds = new Set(), onSelectionChang
                 {selectedCellText}
               </p>
             </div>
-            <div className="p-4 border-t border-neutral-800 flex justify-end">
+            <div className="p-4 border-t border-neutral-800 flex justify-end gap-3">
+              <button
+                onClick={handleCopy}
+                className="px-4 py-2 flex items-center gap-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-lg text-sm font-medium transition-colors"
+              >
+                {hasCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {hasCopied ? 'Copied!' : 'Copy text'}
+              </button>
               <button 
                 onClick={() => setSelectedCellText(null)}
                 className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg text-sm font-medium transition-colors"

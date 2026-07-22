@@ -9,7 +9,7 @@ import { companyService } from '@/services/companies';
 import { CampaignCompany } from '@/types';
 import AddCompanyModal from '@/components/companies/AddCompanyModal';
 import { FileSpreadsheet, Plus, Sparkles, Loader2, CheckCircle2, ChevronDown } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 
 type Props = {
   campaignId: string;

@@ -34,7 +34,11 @@ export function CompaniesTable({ data, selectedIds = new Set(), onSelectionChang
     const cols = new Set<string>();
     data.forEach(row => {
       if (row.enriched_data) {
-        Object.keys(row.enriched_data).forEach(k => cols.add(k));
+        Object.keys(row.enriched_data).forEach(k => {
+          if (!k.startsWith('_')) {
+            cols.add(k);
+          }
+        });
       }
     });
     return Array.from(cols);

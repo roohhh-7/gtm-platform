@@ -1,0 +1,62 @@
+import { NextResponse } from 'next/server';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { researchService } from '@/services/research';
+
+const apiKey = process.env.GEMINI_API_KEY;
+
+export async function POST(req: Request) {
+  try {
+    if (!apiKey) {
+      return NextResponse.json({ error: 'GEMINI_API_KEY is not set' }, { status: 500 });
+    }
+
+    const { companyId, companyName } = await req.json();
+
+    if (!companyId || !companyName) {
+      return NextResponse.json({ error: 'companyId and companyName are required' }, { status: 400 });
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    const prompt = `You are an expert B2B sales researcher. Conduct deep research on the company: "${companyName}".
+Provide your research in JSON format matching exactly this structure:
+{
+  "ai_summary": "A 2-3 sentence summary of what the company does and its market positioning.",
+  "industry": "Primary industry (e.g., Enterprise Software, FinTech)",
+  "funding": "Latest funding round and amount if known, else 'Private' or 'Public'",
+  "tech_stack": ["List", "of", "technologies", "used", "by", "company"],
+  "competitors": ["Competitor A", "Competitor B"],
+  "recent_news": [
+    { "title": "Headline", "source": "News source", "date": "Approximate date or timeframe" }
+  ],
+  "hiring_signals": ["Roles they are currently hiring for"],
+  "pain_points": ["Likely challenges or pain points this company faces at their current stage"],
+  "buying_signals": [
+    { "signal": "Event or indicator that they might buy software soon", "strength": "High, Medium, or Low" }
+  ]
+}
+
+Return ONLY valid JSON. Do not include markdown formatting or extra text.`;
+
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+      },
+    });
+
+    const responseText = result.response.text();
+    const researchData = JSON.parse(responseText);
+
+    // Save to database
+    // Wait, the client might not pass auth cookies to this route unless we pass auth headers, 
+    // or we just return it to the client and let the client save it!
+    // Since the client has the auth token, returning it to the client and letting the client save it is safer.
+    
+    return NextResponse.json({ research: researchData });
+  } catch (error: any) {
+    console.error('Company research generation error:', error);
+    return NextResponse.json({ error: error.message || 'Failed to generate research' }, { status: 500 });
+  }
+}

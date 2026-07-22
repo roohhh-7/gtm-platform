@@ -70,49 +70,51 @@ export function CampaignResearchTab({ campaignId }: Props) {
   const handleGenerateResearch = async () => {
     if (!selectedEntity) return;
     setResearching(true);
-    
-    // Simulate AI delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
 
-    if (selectedEntity.type === 'company') {
-      const mockResearch: Partial<CompanyResearch> = {
-        ai_summary: `${selectedEntity.name} is aggressively scaling and expanding its footprint in the enterprise market. They are prioritizing infrastructure optimization.`,
-        industry: "Technology",
-        funding: "Series C - $50M",
-        tech_stack: ["AWS", "React", "Node.js", "Kubernetes", "Datadog"],
-        competitors: ["CompetitorA", "CompetitorB"],
-        recent_news: [
-          { title: `${selectedEntity.name} announces new product line`, source: "TechCrunch", date: "2 days ago" },
-          { title: `Why ${selectedEntity.name} is shifting to microservices`, source: "Company Blog", date: "1 week ago" }
-        ],
-        hiring_signals: ["Hiring 5 Senior DevOps Engineers", "Looking for VP of Sales"],
-        pain_points: ["High cloud infrastructure costs", "Deployment bottlenecks with growing team size"],
-        buying_signals: [
-          { signal: "Recent Series C funding", strength: "High" },
-          { signal: "VP Engineering viewed pricing page", strength: "Medium" }
-        ]
-      };
-      const { research } = await researchService.saveCompanyResearch(selectedEntity.id, mockResearch);
-      if (research) setCompanyResearch(research);
-    } else {
-      const mockContactResearch: Partial<ContactResearch> = {
-        ai_personalization_notes: `${selectedEntity.name} recently spoke at a conference about scaling engineering teams. Use this as a hook!`,
-        role: "Engineering Leadership",
-        responsibilities: "Managing platform infrastructure, developer experience, and cloud spend.",
-        linkedin_summary: "Experienced engineering leader focused on building high-performing remote teams.",
-        recent_posts: ["Just published our new engineering principles!", "We are hiring DevOps engineers!"],
-        interests: ["Cloud Native", "Developer Experience", "Open Source"],
-        mutual_connections: ["Jane Doe", "John Smith"],
-        personalized_talking_points: [
-          "I loved your recent post about engineering principles.",
-          "I noticed you are hiring DevOps engineers; how are you handling the deployment bottlenecks?"
-        ]
-      };
-      const { research } = await researchService.saveContactResearch(selectedEntity.id, mockContactResearch);
-      if (research) setContactResearch(research);
+    try {
+      if (selectedEntity.type === 'company') {
+        const response = await fetch('/api/research/company', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            companyId: selectedEntity.id,
+            companyName: selectedEntity.name
+          })
+        });
+
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+
+        const { research } = await researchService.saveCompanyResearch(selectedEntity.id, data.research);
+        if (research) setCompanyResearch(research);
+      } else {
+        const contact = campaignContacts.find(c => c.contact_id === selectedEntity.id);
+        const companyName = contact?.contact?.company_id 
+          ? campaignCompanies.find(cc => cc.company_id === contact?.contact?.company_id)?.company?.name
+          : undefined;
+
+        const response = await fetch('/api/research/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contactId: selectedEntity.id,
+            contactName: selectedEntity.name,
+            companyName
+          })
+        });
+
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+
+        const { research } = await researchService.saveContactResearch(selectedEntity.id, data.research);
+        if (research) setContactResearch(research);
+      }
+    } catch (err: any) {
+      console.error("Error generating research:", err);
+      alert(err.message || "Failed to generate AI research. Please check your API key.");
+    } finally {
+      setResearching(false);
     }
-    
-    setResearching(false);
   };
 
   if (loading) {

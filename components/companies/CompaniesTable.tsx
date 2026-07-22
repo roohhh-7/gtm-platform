@@ -41,9 +41,27 @@ export function CompaniesTable({ data, selectedIds = new Set(), onSelectionChang
     }
   };
 
+  // The exact 8 extra columns requested by the user, in order
+  const TARGET_COLUMNS = [
+    'TYPE', 'DOMAIN', 'COUNTRY', 'LOCALITY', 'LOGO_URL', 'TECH_STACK', 'DESCRIPTION', 'LINKEDIN_URL'
+  ];
+
+  const getEnrichedValue = (enriched_data: any, targetCol: string) => {
+    if (!enriched_data) return '-';
+    const targetNormalized = targetCol.toLowerCase().replace(/_/g, ' ').trim();
+    
+    for (const key of Object.keys(enriched_data)) {
+      if (key.toLowerCase().replace(/_/g, ' ').trim() === targetNormalized) {
+        const val = enriched_data[key];
+        return (val !== null && val !== undefined && val !== '') ? val : '-';
+      }
+    }
+    return '-';
+  };
+
   const handleExportCSV = () => {
     // Basic CSV generation
-    const headers = ['Name', 'Domain', 'Industry', 'Employees', 'Country', 'Status', 'AI Score', ...dynamicColumns];
+    const headers = ['Name', 'Domain', 'Industry', 'Employees', 'Country', 'Status', 'AI Score', ...TARGET_COLUMNS];
     const rows = data.map(company => {
       const rowData = [
         `"${company.name || ''}"`,
@@ -55,8 +73,9 @@ export function CompaniesTable({ data, selectedIds = new Set(), onSelectionChang
         `"${company.ai_fit_score || ''}"`
       ];
       
-      dynamicColumns.forEach(col => {
-        const val = company.enriched_data?.[col] ? String(company.enriched_data[col]).replace(/"/g, '""') : '';
+      TARGET_COLUMNS.forEach(col => {
+        const rawVal = getEnrichedValue(company.enriched_data, col);
+        const val = rawVal !== '-' ? String(rawVal).replace(/"/g, '""') : '';
         rowData.push(`"${val}"`);
       });
       
@@ -74,25 +93,7 @@ export function CompaniesTable({ data, selectedIds = new Set(), onSelectionChang
     document.body.removeChild(link);
   };
 
-  // Collect dynamic columns from enriched_data
-  const dynamicColumns = React.useMemo(() => {
-    const allowedNormalized = [
-      'type', 'domain', 'country', 'locality', 'logo url', 'tech stack', 'description', 'linkedin url'
-    ];
-    
-    const cols = new Set<string>();
-    data.forEach(row => {
-      if (row.enriched_data) {
-        Object.keys(row.enriched_data).forEach(k => {
-          const normalized = k.toLowerCase().replace(/_/g, ' ').trim();
-          if (allowedNormalized.includes(normalized) && k !== '_clay_enriched') {
-            cols.add(k);
-          }
-        });
-      }
-    });
-    return Array.from(cols);
-  }, [data]);
+  // Remove useMemo dynamic columns since we use fixed TARGET_COLUMNS now
 
   const allSelected = data.length > 0 && selectedIds.size === data.length;
   
@@ -143,8 +144,8 @@ export function CompaniesTable({ data, selectedIds = new Set(), onSelectionChang
                 AI Match
               </div>
             </TableHead>
-            {dynamicColumns.map(col => (
-              <TableHead key={col} className="w-32 border-r border-neutral-800 capitalize">
+            {TARGET_COLUMNS.map(col => (
+              <TableHead key={col} className="w-40 border-r border-neutral-800 uppercase text-xs tracking-wider">
                 {col.replace(/_/g, ' ')}
               </TableHead>
             ))}
@@ -215,8 +216,9 @@ export function CompaniesTable({ data, selectedIds = new Set(), onSelectionChang
                     <div className="flex justify-center text-neutral-600 text-xs">-</div>
                   )}
                 </TableCell>
-                {dynamicColumns.map(col => {
-                  const val = company.enriched_data?.[col] ? String(company.enriched_data[col]) : '-';
+                {TARGET_COLUMNS.map(col => {
+                  const rawVal = getEnrichedValue(company.enriched_data, col);
+                  const val = String(rawVal);
                   const isUrl = val.startsWith('http');
                   
                   return (

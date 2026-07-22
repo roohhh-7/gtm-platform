@@ -2,7 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
-import { CheckCircle2, MoreHorizontal } from 'lucide-react';
+import { CheckCircle2, MoreHorizontal, X } from 'lucide-react';
 import Link from 'next/link';
 
 type TableRowData = {
@@ -29,6 +29,8 @@ type Props = {
 };
 
 export function CompaniesTable({ data, selectedIds = new Set(), onSelectionChange, enrichingIds = new Set() }: Props) {
+  const [selectedCellText, setSelectedCellText] = React.useState<string | null>(null);
+
   // Collect dynamic columns from enriched_data
   const dynamicColumns = React.useMemo(() => {
     const allowedColumns = [
@@ -177,13 +179,33 @@ export function CompaniesTable({ data, selectedIds = new Set(), onSelectionChang
                     <div className="flex justify-center text-neutral-600 text-xs">-</div>
                   )}
                 </TableCell>
-                {dynamicColumns.map(col => (
-                  <TableCell key={col} className="border-r border-neutral-800 text-neutral-300">
-                    <span className="truncate max-w-[140px] block">
-                      {company.enriched_data?.[col] ? String(company.enriched_data[col]) : '-'}
-                    </span>
-                  </TableCell>
-                ))}
+                {dynamicColumns.map(col => {
+                  const val = company.enriched_data?.[col] ? String(company.enriched_data[col]) : '-';
+                  const isUrl = val.startsWith('http');
+                  
+                  return (
+                    <TableCell key={col} className="border-r border-neutral-800 text-neutral-300 max-w-[200px]">
+                      {isUrl ? (
+                        <a 
+                          href={val} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="truncate block text-blue-400 hover:underline cursor-pointer"
+                        >
+                          {val}
+                        </a>
+                      ) : (
+                        <span 
+                          onClick={() => val !== '-' && setSelectedCellText(val)}
+                          className={`truncate block ${val !== '-' ? 'cursor-pointer hover:text-white transition-colors' : ''}`}
+                          title="Click to view full text"
+                        >
+                          {val}
+                        </span>
+                      )}
+                    </TableCell>
+                  );
+                })}
                 <TableCell className="text-center">
                   {enrichingIds.has(company.id) ? (
                     <span className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-400">
@@ -204,6 +226,36 @@ export function CompaniesTable({ data, selectedIds = new Set(), onSelectionChang
           )}
         </TableBody>
       </Table>
+
+      {/* Cell Content Modal */}
+      {selectedCellText && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[80vh]">
+            <div className="flex items-center justify-between p-4 border-b border-neutral-800">
+              <h3 className="text-white font-medium">Cell Content</h3>
+              <button 
+                onClick={() => setSelectedCellText(null)}
+                className="text-neutral-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto">
+              <p className="text-neutral-300 whitespace-pre-wrap font-mono text-sm leading-relaxed select-text">
+                {selectedCellText}
+              </p>
+            </div>
+            <div className="p-4 border-t border-neutral-800 flex justify-end">
+              <button 
+                onClick={() => setSelectedCellText(null)}
+                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

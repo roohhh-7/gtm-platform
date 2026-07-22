@@ -7,21 +7,14 @@ import { CampaignContactsTab } from '@/components/campaigns/details/CampaignCont
 import { CampaignOutreachTab } from '@/components/campaigns/details/CampaignOutreachTab';
 import { CampaignResearchTab } from '@/components/campaigns/details/CampaignResearchTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
-import { createClient } from '@/lib/supabase/server';
 
 export default async function CampaignDetailsPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ tab?: string }> }) {
   const { id } = await params;
   const { tab } = await searchParams;
-  const supabase = await createClient();
-  const { data: campaign } = await supabase
-    .from('campaigns')
-    .select('*')
-    .eq('id', id)
-    .single();
   
   return (
     <div className="space-y-6">
-      <CampaignDetailsHeader campaign={campaign} />
+      <CampaignDetailsHeader campaignId={id} />
       
       <Tabs defaultValue={tab || "overview"} className="mt-6">
         <TabsList className="mb-6 flex flex-wrap gap-2">

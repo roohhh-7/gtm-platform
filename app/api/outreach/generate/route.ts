@@ -6,10 +6,10 @@ export const maxDuration = 60; // Allow more time for LLM execution
 
 export async function POST(req: Request) {
   try {
-    const { contactId, companyId, contactName, contactRole, companyName } = await req.json();
+    const { campaignId, contactId, companyId, contactName, contactRole, companyName } = await req.json();
 
-    if (!contactId || !companyId) {
-      return NextResponse.json({ error: 'Missing contactId or companyId' }, { status: 400 });
+    if (!campaignId || !contactId || !companyId) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -23,6 +23,13 @@ export async function POST(req: Request) {
       .from('company_research')
       .select('*')
       .eq('company_id', companyId)
+      .maybeSingle();
+
+    // Fetch the ICP (Ideal Customer Profile) for context on what we are selling
+    const { data: icp } = await supabase
+      .from('icp')
+      .select('*')
+      .eq('campaign_id', campaignId)
       .maybeSingle();
 
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -39,17 +46,27 @@ Outreach Angles: ${JSON.stringify(research.outreach_angles || [])}
       `;
     }
 
+    let sellingContext = '';
+    if (icp && (icp.product_description || icp.problem_statement)) {
+      sellingContext = `
+What we are selling / Our Value Proposition:
+Product Description: ${icp.product_description || 'N/A'}
+Problem we solve: ${icp.problem_statement || 'N/A'}
+      `;
+    }
+
     const prompt = `You are an elite B2B sales development representative writing a highly personalized cold email.
 Your goal is to write a short, punchy, and compelling email to ${contactName}, whose role is ${contactRole} at ${companyName}.
 
 Here is the research we have on their company:
 ${companyContext}
+${sellingContext}
 
 Instructions:
 1. Subject line must be short, intriguing, and personalized. (max 5 words)
 2. Body must be under 120 words. Keep it highly readable with short paragraphs.
 3. Personalize the hook based on the "Why Now" or "Growth Signals" if available.
-4. Align the value proposition with their "Pain Points" and "Outreach Angles".
+4. Align what we are selling (see Value Proposition) with their "Pain Points" and "Outreach Angles".
 5. End with a low-friction, soft call to action (e.g., "Open to a quick chat?").
 6. Provide a list of "context_used" (2-3 bullet points) summarizing exactly what specific research points you used to personalize the email.
 

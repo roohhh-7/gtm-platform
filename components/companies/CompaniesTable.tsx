@@ -76,11 +76,16 @@ export function CompaniesTable({ data, selectedIds = new Set(), onSelectionChang
 
   // Collect dynamic columns from enriched_data
   const dynamicColumns = React.useMemo(() => {
+    const allowedNormalized = [
+      'type', 'domain', 'country', 'locality', 'logo url', 'tech stack', 'description', 'linkedin url'
+    ];
+    
     const cols = new Set<string>();
     data.forEach(row => {
       if (row.enriched_data) {
         Object.keys(row.enriched_data).forEach(k => {
-          if (k !== '_clay_enriched') {
+          const normalized = k.toLowerCase().replace(/_/g, ' ').trim();
+          if (allowedNormalized.includes(normalized) && k !== '_clay_enriched') {
             cols.add(k);
           }
         });

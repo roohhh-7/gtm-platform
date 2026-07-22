@@ -17,8 +17,8 @@ export async function POST(req: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Use gemini-2.5-flash as 1.5 versions are retired
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    // Use the latest available 2026 model string
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
 
     const prompt = `You are an expert B2B sales researcher. Conduct deep research on the company: "${companyName}".
 ${customQuestion ? `The user also asked a specific question: "${customQuestion}". Please answer this in the 'custom_question_answer' field.` : ''}

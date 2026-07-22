@@ -23,8 +23,8 @@ export default async function CampaignDetailsPage({ params, searchParams }: { pa
           <TabsTrigger value="companies">Companies</TabsTrigger>
           <TabsTrigger value="discovery">Prospect Discovery</TabsTrigger>
           <TabsTrigger value="contacts">Contacts</TabsTrigger>
-          <TabsTrigger value="outreach">Outreach</TabsTrigger>
           <TabsTrigger value="research">Research</TabsTrigger>
+          <TabsTrigger value="outreach">Outreach</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview">
@@ -47,12 +47,12 @@ export default async function CampaignDetailsPage({ params, searchParams }: { pa
           <CampaignContactsTab campaignId={id} />
         </TabsContent>
         
-        <TabsContent value="outreach">
-          <CampaignOutreachTab campaignId={id} />
-        </TabsContent>
-        
         <TabsContent value="research">
           <CampaignResearchTab campaignId={id} />
+        </TabsContent>
+        
+        <TabsContent value="outreach">
+          <CampaignOutreachTab campaignId={id} />
         </TabsContent>
       </Tabs>
     </div>

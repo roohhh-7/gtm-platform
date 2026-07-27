@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-// @ts-ignore
-import pdfParse from 'pdf-parse/lib/pdf-parse.js';
+import { extractText, getDocumentProxy } from 'unpdf';
 
 export async function POST(req: Request) {
   try {
@@ -11,10 +10,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
     
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const data = await pdfParse(buffer);
+    const buffer = await file.arrayBuffer();
+    const pdf = await getDocumentProxy(new Uint8Array(buffer));
+    const { text } = await extractText(pdf, { mergePages: true });
     
-    return NextResponse.json({ text: data.text });
+    return NextResponse.json({ text });
   } catch (error: any) {
     console.error('Error parsing PDF:', error);
     return NextResponse.json({ error: error.message || 'Failed to parse PDF' }, { status: 500 });

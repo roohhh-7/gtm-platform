@@ -47,11 +47,13 @@ Outreach Angles: ${JSON.stringify(research.outreach_angles || [])}
     }
 
     let sellingContext = '';
-    if (icp && (icp.product_description || icp.problem_statement)) {
+    if (icp && (icp.product_description || icp.problem_statement || icp.product_pdf_text)) {
       sellingContext = `
 What we are selling / Our Value Proposition:
 Product Description: ${icp.product_description || 'N/A'}
 Problem we solve: ${icp.problem_statement || 'N/A'}
+Product Brochure / Additional Context: 
+${icp.product_pdf_text || 'N/A'}
       `;
     }
 

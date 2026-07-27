@@ -23,10 +23,12 @@ export default function EditICPModal({
   const [locations, setLocations] = useState('');
   const [productDescription, setProductDescription] = useState('');
   const [problemStatement, setProblemStatement] = useState('');
+  const [productPdfText, setProductPdfText] = useState('');
   const [marketSegments, setMarketSegments] = useState<string[]>([]);
   const [idealCustomerCharacteristics, setIdealCustomerCharacteristics] = useState('');
   const [targetDomains, setTargetDomains] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pdfUploading, setPdfUploading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -37,6 +39,7 @@ export default function EditICPModal({
       setLocations(initialData.locations.join(', '));
       setProductDescription(initialData.product_description || '');
       setProblemStatement(initialData.problem_statement || '');
+      setProductPdfText(initialData.product_pdf_text || '');
       setMarketSegments(initialData.market_segments || []);
       setIdealCustomerCharacteristics(initialData.ideal_customer_characteristics || '');
       setTargetDomains((initialData.target_domains || []).join(', '));
@@ -56,6 +59,7 @@ export default function EditICPModal({
       locations: locations.split(',').map(s => s.trim()).filter(Boolean),
       product_description: productDescription,
       problem_statement: problemStatement,
+      product_pdf_text: productPdfText,
       market_segments: marketSegments,
       ideal_customer_characteristics: idealCustomerCharacteristics,
       target_domains: targetDomains.split(',').map(s => s.trim()).filter(Boolean),
@@ -69,6 +73,33 @@ export default function EditICPModal({
       setError(submitError.message);
     } else if (icp) {
       onSuccess(icp);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setPdfUploading(true);
+    setError('');
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/parse-pdf', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to parse PDF');
+      
+      setProductPdfText(data.text);
+    } catch (err: any) {
+      setError(err.message || 'Error uploading PDF');
+    } finally {
+      setPdfUploading(false);
     }
   };
 
@@ -111,6 +142,21 @@ export default function EditICPModal({
               placeholder="Product teams manually collect customer feedback..."
               className="w-full rounded-lg bg-neutral-800 p-3 text-sm text-white outline-none focus:ring-1 focus:ring-neutral-700 transition-shadow disabled:opacity-50 min-h-[60px]"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs text-neutral-500 mb-1">Product Brochure / Overview (PDF) - Optional</label>
+            <div className="flex flex-col gap-2">
+              <input 
+                type="file" 
+                accept="application/pdf"
+                onChange={handleFileUpload}
+                disabled={loading || pdfUploading}
+                className="w-full text-sm text-neutral-400 file:cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-neutral-800 file:text-neutral-200 hover:file:bg-neutral-700"
+              />
+              {pdfUploading && <div className="text-xs text-neutral-400">Extracting text...</div>}
+              {productPdfText && !pdfUploading && <div className="text-xs text-emerald-500">✓ PDF text extracted ({productPdfText.length} characters)</div>}
+            </div>
           </div>
 
           <div>

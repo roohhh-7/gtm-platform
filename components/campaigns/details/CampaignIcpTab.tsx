@@ -65,6 +65,12 @@ export function CampaignIcpTab({ campaignId }: Props) {
               </span>
             </div>
             <div className="grid grid-cols-3 gap-2 py-2 border-b border-neutral-800/60">
+              <span className="text-neutral-500">Product Brochure / PDF</span>
+              <span className="col-span-2 text-neutral-200">
+                {icp.product_pdf_text ? <span className="text-emerald-400">✓ Attached</span> : 'Not attached'}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 py-2 border-b border-neutral-800/60">
               <span className="text-neutral-500">Who buys it?</span>
               <span className="col-span-2 text-neutral-200">
                 {icp.titles?.length ? icp.titles.join(', ') : 'Any'}

@@ -38,6 +38,7 @@ export interface ICP {
   locations: string[];
   product_description?: string;
   problem_statement?: string;
+  product_pdf_text?: string;
   market_segments: string[];
   ideal_customer_characteristics?: string;
   target_domains?: string[];

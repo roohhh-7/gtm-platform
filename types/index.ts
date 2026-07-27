@@ -88,6 +88,7 @@ export interface CampaignContact {
   added_at: string;
   contact?: Contact; // For joined queries
   campaign?: { name: string }; // For joined queries
+  email_draft?: { subject: string; body: string }; // For joined queries
 }
 
 export interface CompanyResearch {

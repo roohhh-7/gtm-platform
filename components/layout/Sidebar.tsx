@@ -18,9 +18,9 @@ const navItems = [
   { name: 'Campaigns', href: '/campaigns', icon: Megaphone },
   { name: 'Companies', href: '/companies', icon: Building2 },
   { name: 'Contacts', href: '/contacts', icon: Users },
-  { name: 'Research', href: '/research', icon: Search },
-  { name: 'Integrations', href: '/integrations', icon: Blocks },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  // { name: 'Research', href: '/research', icon: Search },
+  // { name: 'Integrations', href: '/integrations', icon: Blocks },
+  // { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 export function Sidebar() {
@@ -58,7 +58,7 @@ export function Sidebar() {
           );
         })}
         
-        <div className="px-3 text-xs font-medium text-neutral-500 mb-2 mt-6 uppercase tracking-wider">Configure</div>
+        {/* <div className="px-3 text-xs font-medium text-neutral-500 mb-2 mt-6 uppercase tracking-wider">Configure</div> */}
         {navItems.slice(5).map((item) => {
           const isActive = pathname === item.href;
           return (

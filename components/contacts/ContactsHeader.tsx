@@ -11,11 +11,11 @@ export function ContactsHeader() {
         <p className="text-sm text-neutral-400 mt-1">Manage individuals and decision makers.</p>
       </div>
       
-      <div className="flex items-center gap-3">
-        <Button variant="secondary" className="gap-2">
+      <div className="flex items-center gap-2">
+        {/* <Button variant="secondary" className="gap-2">
           <UserPlus className="h-4 w-4" />
           Add Contact
-        </Button>
+        </Button> */}
       </div>
     </div>
   );
@@ -40,10 +40,10 @@ export function ContactsFilters() {
           />
         </div>
         
-        <Button variant="secondary" className="px-3 gap-2 ml-auto sm:ml-0">
+        {/* <Button variant="secondary" className="px-3 gap-2 ml-auto sm:ml-0">
           <SlidersHorizontal className="h-4 w-4" />
           <span className="hidden sm:inline">Filters</span>
-        </Button>
+        </Button> */}
       </div>
     </div>
   );

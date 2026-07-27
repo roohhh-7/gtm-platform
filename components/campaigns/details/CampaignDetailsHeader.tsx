@@ -35,7 +35,7 @@ export function CampaignDetailsHeader({ campaignId }: Props) {
         <p className="text-sm text-neutral-400 mt-1">Targeting companies in the {campaign?.industry || ''} industry.</p>
       </div>
       
-      <div className="flex items-center gap-2">
+      {/* <div className="flex items-center gap-2">
         <Button variant="secondary" className="w-full sm:w-auto gap-2">
           <Pause className="h-4 w-4" />
           Pause
@@ -44,7 +44,7 @@ export function CampaignDetailsHeader({ campaignId }: Props) {
           <Pencil className="h-4 w-4" />
           Edit
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 }

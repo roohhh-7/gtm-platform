@@ -18,24 +18,24 @@ export function QuickActions() {
             <span>New Campaign</span>
           </Button>
         </Link>
-        <Link href="/contacts" passHref>
+        {/* <Link href="/contacts" passHref>
           <Button variant="secondary" className="w-full justify-start gap-3">
             <Users className="h-4 w-4 text-neutral-400" />
             <span>Import Contacts</span>
           </Button>
-        </Link>
-        <Link href="/research" passHref>
+        </Link> */}
+        {/* <Link href="/research" passHref>
           <Button variant="secondary" className="w-full justify-start gap-3">
             <Sparkles className="h-4 w-4 text-neutral-400" />
             <span>AI Research</span>
           </Button>
-        </Link>
-        <Link href="/analytics" passHref>
+        </Link> */}
+        {/* <Link href="/analytics" passHref>
           <Button variant="secondary" className="w-full justify-start gap-3">
             <LineChart className="h-4 w-4 text-neutral-400" />
             <span>View Reports</span>
           </Button>
-        </Link>
+        </Link> */}
       </div>
     </Card>
   );

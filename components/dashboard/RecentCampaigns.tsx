@@ -1,6 +1,7 @@
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { MoreHorizontal } from 'lucide-react';
+import Link from 'next/link';
 
 interface CampaignWithCounts {
   id: string;
@@ -16,7 +17,9 @@ export function RecentCampaigns({ campaigns = [] }: { campaigns?: CampaignWithCo
     <Card className="col-span-1 md:col-span-2">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-medium text-neutral-200">Recent Campaigns</h2>
-        <button className="text-xs font-medium text-neutral-500 hover:text-neutral-300 transition-colors">View all</button>
+        <Link href="/campaigns" passHref>
+          <button className="text-xs font-medium text-neutral-500 hover:text-neutral-300 transition-colors">View all</button>
+        </Link>
       </div>
       
       <div className="overflow-x-auto">
@@ -52,9 +55,9 @@ export function RecentCampaigns({ campaigns = [] }: { campaigns?: CampaignWithCo
                   <td className="py-3 pr-4 text-right tabular-nums text-neutral-300">{campaign.companies_count.toLocaleString()}</td>
                   <td className="py-3 pr-4 text-right tabular-nums text-neutral-300">{campaign.contacts_count.toLocaleString()}</td>
                   <td className="py-3 text-right">
-                    <button className="p-1 rounded text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 transition-colors opacity-0 group-hover:opacity-100">
+                    {/* <button className="p-1 rounded text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 transition-colors opacity-0 group-hover:opacity-100">
                       <MoreHorizontal className="h-4 w-4" />
-                    </button>
+                    </button> */}
                   </td>
                 </tr>
               ))

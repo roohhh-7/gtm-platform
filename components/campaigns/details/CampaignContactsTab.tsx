@@ -40,7 +40,41 @@ export function CampaignContactsTab({ campaignId }: Props) {
       email: cc.contact!.email,
       linkedin_url: cc.contact!.linkedin_url,
       status: cc.status,
+      email_subject: cc.email_draft?.subject || '',
+      email_body: cc.email_draft?.body || '',
     }));
+
+  const handleExportCsv = () => {
+    if (tableData.length === 0) return;
+    
+    // Define headers
+    const headers = ['Name', 'Role', 'Company Name', 'Email', 'LinkedIn', 'Status', 'Generated Subject', 'Generated Body'];
+    
+    // Map rows
+    const rows = tableData.map(row => [
+      `"${row.name.replace(/"/g, '""')}"`,
+      `"${(row.role || '').replace(/"/g, '""')}"`,
+      `"${(row.companyName || '').replace(/"/g, '""')}"`,
+      `"${(row.email || '').replace(/"/g, '""')}"`,
+      `"${(row.linkedin_url || '').replace(/"/g, '""')}"`,
+      `"${row.status}"`,
+      `"${(row.email_subject || '').replace(/"/g, '""')}"`,
+      `"${(row.email_body || '').replace(/"/g, '""')}"`
+    ].join(','));
+    
+    // Create CSV string
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    
+    // Download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `campaign_contacts_${campaignId}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <Card className="p-0 overflow-hidden">
@@ -49,7 +83,7 @@ export function CampaignContactsTab({ campaignId }: Props) {
           <Input placeholder="Search contacts..." icon={true} />
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" size="sm">Export CSV</Button>
+          <Button onClick={handleExportCsv} variant="secondary" size="sm">Export CSV</Button>
           <Button onClick={() => setIsAddModalOpen(true)} size="sm">Add Contact</Button>
         </div>
       </div>

@@ -60,17 +60,19 @@ ${icp.product_pdf_text || 'N/A'}
     const prompt = `You are an elite B2B sales development representative writing a highly personalized cold email.
 Your goal is to write a short, punchy, and compelling email to ${contactName}, whose role is ${contactRole} at ${companyName}.
 
-Here is the research we have on their company:
-${companyContext}
+First, deeply analyze the following details about the product we are selling (including any product brochure/PDF context) to thoroughly understand our value proposition:
 ${sellingContext}
+
+Next, analyze the following deep research on the target company (${companyName}) to understand exactly what they do, their pain points, and current focus:
+${companyContext}
 
 Instructions:
 1. Subject line must be short, intriguing, and personalized. (max 5 words)
 2. Body must be under 120 words. Keep it highly readable with short paragraphs.
 3. Personalize the hook based on the "Why Now" or "Growth Signals" if available.
-4. Align what we are selling (see Value Proposition) with their "Pain Points" and "Outreach Angles".
+4. CRITICAL: Draw a clear, logical connection between the Target Company's specific "Pain Points" or business focus and Our Value Proposition. Show them exactly how our specific product solves their specific problems based on the product brochure.
 5. End with a low-friction, soft call to action (e.g., "Open to a quick chat?").
-6. Provide a list of "context_used" (2-3 bullet points) summarizing exactly what specific research points you used to personalize the email.
+6. Provide a list of "context_used" (2-3 bullet points) summarizing exactly what specific research points you used to personalize the email and how it ties to our product.
 
 Provide your output in strict JSON format exactly matching this structure:
 {

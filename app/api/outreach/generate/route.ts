@@ -1,11 +1,21 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { requireAuth } from '@/lib/auth';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export const maxDuration = 60; // Allow more time for LLM execution
 
 export async function POST(req: Request) {
   try {
+    // 1. Rate Limit (Max 15 requests per minute per IP for AI routes)
+    const rateLimitError = checkRateLimit(req, 15, 60);
+    if (rateLimitError) return rateLimitError;
+
+    // 2. Authentication Check
+    const { user, errorResponse } = await requireAuth();
+    if (errorResponse) return errorResponse;
+
     const { campaignId, contactId, companyId, contactName, contactRole, companyName } = await req.json();
 
     if (!campaignId || !contactId || !companyId) {

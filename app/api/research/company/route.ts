@@ -1,11 +1,21 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { researchService } from '@/services/research';
+import { requireAuth } from '@/lib/auth';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const apiKey = process.env.GEMINI_API_KEY;
 
 export async function POST(req: Request) {
   try {
+    // 1. Rate Limit (Max 15 requests per minute per IP for AI routes)
+    const rateLimitError = checkRateLimit(req, 15, 60);
+    if (rateLimitError) return rateLimitError;
+
+    // 2. Authentication Check
+    const { user, errorResponse } = await requireAuth();
+    if (errorResponse) return errorResponse;
+
     if (!apiKey) {
       return NextResponse.json({ error: 'GEMINI_API_KEY is not set' }, { status: 500 });
     }

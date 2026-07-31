@@ -9,6 +9,13 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST(req: Request) {
   try {
+    // Basic Webhook Security: Verify a secret token
+    const authHeader = req.headers.get('authorization');
+    const secret = process.env.CLAY_WEBHOOK_SECRET;
+    if (secret && authHeader !== `Bearer ${secret}`) {
+      return NextResponse.json({ error: 'Unauthorized Webhook' }, { status: 401 });
+    }
+
     const payload = await req.json();
 
     console.log('Received Clay Webhook:', payload);

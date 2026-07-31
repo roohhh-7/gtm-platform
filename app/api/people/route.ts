@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchApolloContacts } from '@/services/prospect-discovery/apollo';
+import { requireAuth } from '@/lib/auth';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
+    // 1. Rate Limit (Max 15 requests per minute per IP for AI/Data routes)
+    const rateLimitError = checkRateLimit(req, 15, 60);
+    if (rateLimitError) return rateLimitError;
+
+    // 2. Authentication Check
+    const { user, errorResponse } = await requireAuth();
+    if (errorResponse) return errorResponse;
+
     const { domain } = await req.json();
     
     if (!domain) {

@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server';
 import { syncCompanyToHubSpot } from '@/lib/hubspot';
 import { createClient } from '@supabase/supabase-js';
+import { requireAuth } from '@/lib/auth';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
   try {
+    // 1. Rate Limit (Max 30 requests per minute per IP)
+    const rateLimitError = checkRateLimit(request, 30, 60);
+    if (rateLimitError) return rateLimitError;
+
+    // 2. Authentication Check
+    const { user, errorResponse } = await requireAuth();
+    if (errorResponse) return errorResponse;
+
     const { companyId } = await request.json();
 
     if (!companyId) {

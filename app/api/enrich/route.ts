@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { requireAuth } from '@/lib/auth';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 // Mock enrichment endpoint
 export async function POST(req: NextRequest) {
   try {
+    // 1. Rate Limit (Max 30 requests per minute per IP for general routes)
+    const rateLimitError = checkRateLimit(req, 30, 60);
+    if (rateLimitError) return rateLimitError;
+
+    // 2. Authentication Check
+    const { user, errorResponse } = await requireAuth();
+    if (errorResponse) return errorResponse;
+
     const { companyIds } = await req.json();
 
     if (!companyIds || !Array.isArray(companyIds)) {

@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
     // Fetch the ICP (Ideal Customer Profile) for context on what we are selling
     const { data: icp } = await supabase
-      .from('icp')
+      .from('icps')
       .select('*')
       .eq('campaign_id', campaignId)
       .maybeSingle();
@@ -45,6 +45,8 @@ Pain Points: ${JSON.stringify(research.pain_points || [])}
 Outreach Angles: ${JSON.stringify(research.outreach_angles || [])}
       `;
     }
+    
+    console.log('[DEBUG] Fetched ICP:', icp);
 
     let sellingContext = '';
     if (icp && (icp.product_description || icp.problem_statement || icp.product_pdf_text)) {
@@ -80,6 +82,8 @@ Provide your output in strict JSON format exactly matching this structure:
   "body": "string (use \\n for line breaks, sign off as 'Rohit')",
   "context_used": ["string", "string"]
 }`;
+
+    console.log('[DEBUG] Final Prompt:', prompt);
 
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],

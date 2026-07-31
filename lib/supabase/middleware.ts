@@ -38,9 +38,8 @@ export async function updateSession(request: NextRequest) {
   console.log('- User id:', session?.user?.id);
   if (error) console.log('- Auth Error:', error.message);
 
-  // Protect all routes except /login
-  // Protect all routes except /login
-  if (!session?.user && !request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.pathname.startsWith('/auth')) {
+  // Protect all routes except /login and /api
+  if (!session?.user && !request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.pathname.startsWith('/auth') && !request.nextUrl.pathname.startsWith('/api')) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);

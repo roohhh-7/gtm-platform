@@ -27,20 +27,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Gemini API key is not configured' }, { status: 500 });
     }
 
-    // Fetch company research and ICP using an admin client to bypass RLS issues
-    const supabaseAdmin = createAdminClient(
+    // Fetch company research and ICP using the user's auth token to enforce RLS
+    const authHeader = req.headers.get('Authorization') || '';
+    const supabaseClient = createAdminClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: authHeader,
+          },
+        },
+      }
     );
 
-    const { data: research } = await supabaseAdmin
+    const { data: research } = await supabaseClient
       .from('company_research')
       .select('*')
       .eq('company_id', companyId)
       .maybeSingle();
 
     // Fetch the ICP (Ideal Customer Profile) for context on what we are selling
-    const { data: icp } = await supabaseAdmin
+    const { data: icp } = await supabaseClient
       .from('icps')
       .select('*')
       .eq('campaign_id', campaignId)

@@ -26,9 +26,20 @@ export async function POST(request: Request) {
     }
 
     // Initialize Supabase client
+    // Use standard client with Authorization header to enforce RLS
+    const authHeader = request.headers.get('Authorization') || '';
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(
+      supabaseUrl, 
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: authHeader,
+          },
+        },
+      }
+    );
     
     // Fetch the company data
     const { data: company, error } = await supabase

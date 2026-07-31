@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     if (rateLimitError) return rateLimitError;
 
     // 2. Authentication Check
-    const { user, errorResponse } = await requireAuth();
+    const { user, errorResponse } = await requireAuth(req);
     if (errorResponse) return errorResponse;
 
     const { campaignId, contactId, companyId, contactName, contactRole, companyName } = await req.json();

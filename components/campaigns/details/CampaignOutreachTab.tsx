@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Mail, RefreshCw, Check, Sparkles, User, ChevronDown, ChevronRight, Building2 } from 'lucide-react';
 import { contactService } from '@/services/contacts';
 import { outreachService } from '@/services/outreach';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import { CampaignContact, OutreachEmail } from '@/types';
 
 type Props = {
@@ -94,7 +95,7 @@ export function CampaignOutreachTab({ campaignId }: Props) {
     if (!c.contact?.company_id) return null;
     
     try {
-      const res = await fetch('/api/outreach/generate', {
+      const res = await fetchWithAuth('/api/outreach/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

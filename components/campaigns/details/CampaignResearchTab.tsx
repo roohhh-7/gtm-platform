@@ -8,6 +8,7 @@ import { Sparkles, Building2, User, ChevronRight } from 'lucide-react';
 import { companyService } from '@/services/companies';
 import { contactService } from '@/services/contacts';
 import { researchService } from '@/services/research';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import { CampaignCompany, CampaignContact, CompanyResearch, ContactResearch } from '@/types';
 
 type Props = {
@@ -74,7 +75,7 @@ export function CampaignResearchTab({ campaignId }: Props) {
 
     try {
       if (selectedEntity.type === 'company') {
-        const response = await fetch('/api/research/company', {
+        const response = await fetchWithAuth('/api/research/company', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -95,7 +96,7 @@ export function CampaignResearchTab({ campaignId }: Props) {
           ? campaignCompanies.find(cc => cc.company_id === contact?.contact?.company_id)?.company?.name
           : undefined;
 
-        const response = await fetch('/api/research/contact', {
+        const response = await fetchWithAuth('/api/research/contact', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

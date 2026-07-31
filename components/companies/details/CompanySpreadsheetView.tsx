@@ -7,6 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/Badge';
 import { MockResearchFlow } from './MockResearchFlow';
 import { createClient } from '@/lib/supabase/client';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
+import { researchService } from '@/services/research';
 import { contactService } from '@/services/contacts';
 
 type Props = {
@@ -117,7 +119,7 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
       }
 
       // 2. If no existing contacts, fetch from Apollo API (or Mock)
-      const response = await fetch('/api/people', {
+      const response = await fetchWithAuth('/api/people', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ domain: company.domain })
@@ -164,7 +166,7 @@ export function CompanySpreadsheetView({ company, campaignId }: Props) {
     
     try {
       // Send a POST request to our internal API route to avoid CORS issues
-      const response = await fetch('/api/clay/trigger', {
+      const response = await fetchWithAuth('/api/clay/trigger', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

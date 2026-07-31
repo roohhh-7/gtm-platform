@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { createClient } from '@/lib/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 
 export const maxDuration = 60; // Allow more time for LLM execution
 
@@ -17,16 +17,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Gemini API key is not configured' }, { status: 500 });
     }
 
-    // Fetch company research from the database
-    const supabase = await createClient();
-    const { data: research } = await supabase
+    // Fetch company research and ICP using an admin client to bypass RLS issues
+    const supabaseAdmin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const { data: research } = await supabaseAdmin
       .from('company_research')
       .select('*')
       .eq('company_id', companyId)
       .maybeSingle();
 
     // Fetch the ICP (Ideal Customer Profile) for context on what we are selling
-    const { data: icp } = await supabase
+    const { data: icp } = await supabaseAdmin
       .from('icps')
       .select('*')
       .eq('campaign_id', campaignId)

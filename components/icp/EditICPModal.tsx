@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { icpService } from '@/services/icps';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import { ICP } from '@/types';
 
 type Props = {
@@ -87,7 +88,7 @@ export default function EditICPModal({
       const formData = new FormData();
       formData.append('file', file);
 
-      const res = await fetch('/api/parse-pdf', {
+      const res = await fetchWithAuth('/api/parse-pdf', {
         method: 'POST',
         body: formData,
       });

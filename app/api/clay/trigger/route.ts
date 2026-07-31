@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
   try {
+    // 1. Rate Limiting (e.g., max 15 requests per minute per IP)
+    const rateLimitError = checkRateLimit(request, 15, 60);
+    if (rateLimitError) return rateLimitError;
+
+    // 2. Authentication Check
+    const { user, errorResponse } = await requireAuth(request);
+    if (errorResponse) return errorResponse;
+
     const { company_id, domain } = await request.json();
 
     if (!domain) {

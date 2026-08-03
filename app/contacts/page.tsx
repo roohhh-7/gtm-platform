@@ -5,7 +5,6 @@ import { ContactsHeader, ContactsFilters } from '@/components/contacts/ContactsH
 import { ContactsTable } from '@/components/contacts/ContactsTable';
 import { contactService } from '@/services/contacts';
 import { Contact } from '@/types';
-import { Loader2 } from 'lucide-react';
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<any[]>([]);
@@ -41,10 +40,7 @@ export default function ContactsPage() {
       </div>
       
       {loading ? (
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-16 flex flex-col items-center justify-center gap-3 backdrop-blur-md">
-          <Loader2 className="h-6 w-6 text-indigo-400 animate-spin" />
-          <span className="text-xs text-zinc-400">Loading contacts directory...</span>
-        </div>
+        <div className="py-12 flex justify-center text-neutral-500">Loading contacts...</div>
       ) : (
         <ContactsTable data={tableData} />
       )}

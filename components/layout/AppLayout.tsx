@@ -2,7 +2,8 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Navbar } from '@/components/layout/Navbar';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { Header } from '@/components/layout/Header';
 import { authService } from '@/services/auth';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -22,18 +23,23 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (isAuthPage) {
     return (
-      <main className="flex flex-col min-h-screen w-full items-center justify-center p-6 bg-[#08090c]">
+      <main className="flex flex-col min-h-screen w-full items-center justify-center p-6 bg-neutral-950">
         {children}
       </main>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#08090c] text-zinc-100 selection:bg-indigo-500/30 selection:text-indigo-200">
-      <Navbar />
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 animate-in fade-in-50 duration-200">
-        {children}
-      </main>
-    </div>
+    <>
+      <Sidebar />
+      <div className="flex flex-col flex-1 pl-0 md:pl-64">
+        <Header />
+        <main className="flex-1 overflow-y-auto p-6 md:p-8">
+          <div className="mx-auto max-w-6xl">
+            {children}
+          </div>
+        </main>
+      </div>
+    </>
   );
 }

@@ -1,42 +1,57 @@
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Plus, Users, Sparkles, LineChart } from 'lucide-react';
+import { Plus, Users, Sparkles, Megaphone, ArrowUpRight, Upload } from 'lucide-react';
 import Link from 'next/link';
 
 export function QuickActions() {
+  const actions = [
+    {
+      title: 'New Campaign',
+      description: 'Start a new outbound sequence',
+      href: '/campaigns',
+      icon: Plus,
+      iconColor: 'text-indigo-400',
+      iconBg: 'bg-indigo-500/10 border-indigo-500/20',
+    },
+    {
+      title: 'Company Directory',
+      description: 'Review prospect accounts',
+      href: '/companies',
+      icon: Users,
+      iconColor: 'text-sky-400',
+      iconBg: 'bg-sky-500/10 border-sky-500/20',
+    },
+  ];
+
   return (
-    <Card className="col-span-1 md:col-span-3 lg:col-span-1 bg-neutral-900 border-dashed border-neutral-700/50">
-      <div className="mb-4">
-        <h2 className="text-sm font-medium text-neutral-200">Quick Actions</h2>
-        <p className="text-xs text-neutral-500 mt-1">Common tasks to get started</p>
+    <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-5 backdrop-blur-md specular-border shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)]">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-semibold text-white tracking-tight">Quick Actions</h2>
+        <span className="text-[10px] font-mono uppercase text-zinc-400">Shortcuts</span>
       </div>
       
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-1">
-        <Link href="/campaigns" passHref>
-          <Button variant="secondary" className="w-full justify-start gap-3">
-            <Plus className="h-4 w-4 text-neutral-400" />
-            <span>New Campaign</span>
-          </Button>
-        </Link>
-        {/* <Link href="/contacts" passHref>
-          <Button variant="secondary" className="w-full justify-start gap-3">
-            <Users className="h-4 w-4 text-neutral-400" />
-            <span>Import Contacts</span>
-          </Button>
-        </Link> */}
-        {/* <Link href="/research" passHref>
-          <Button variant="secondary" className="w-full justify-start gap-3">
-            <Sparkles className="h-4 w-4 text-neutral-400" />
-            <span>AI Research</span>
-          </Button>
-        </Link> */}
-        {/* <Link href="/analytics" passHref>
-          <Button variant="secondary" className="w-full justify-start gap-3">
-            <LineChart className="h-4 w-4 text-neutral-400" />
-            <span>View Reports</span>
-          </Button>
-        </Link> */}
+      <div className="grid grid-cols-1 gap-2.5">
+        {actions.map((action) => (
+          <Link 
+            key={action.title}
+            href={action.href}
+            className="group flex items-center justify-between p-3 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.12] transition-all duration-150"
+          >
+            <div className="flex items-center gap-3">
+              <div className={`h-8 w-8 rounded-lg ${action.iconBg} border flex items-center justify-center ${action.iconColor} shrink-0`}>
+                <action.icon className="h-4 w-4" />
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors">
+                  {action.title}
+                </span>
+                <span className="text-[11px] text-zinc-400">
+                  {action.description}
+                </span>
+              </div>
+            </div>
+            <ArrowUpRight className="h-3.5 w-3.5 text-zinc-400 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+          </Link>
+        ))}
       </div>
-    </Card>
+    </div>
   );
 }

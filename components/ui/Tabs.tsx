@@ -12,14 +12,22 @@ const TabsContext = createContext<TabsContextType | undefined>(undefined);
 
 export interface TabsProps extends HTMLAttributes<HTMLDivElement> {
   defaultValue: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
 }
 
 export const Tabs = forwardRef<HTMLDivElement, TabsProps>(
-  ({ className, defaultValue, children, ...props }, ref) => {
-    const [activeTab, setActiveTab] = useState(defaultValue);
+  ({ className, defaultValue, value, onValueChange, children, ...props }, ref) => {
+    const [tabState, setTabState] = useState(defaultValue);
+    const activeTab = value !== undefined ? value : tabState;
+
+    const handleTabChange = (newVal: string) => {
+      setTabState(newVal);
+      onValueChange?.(newVal);
+    };
 
     return (
-      <TabsContext.Provider value={{ activeTab, setActiveTab }}>
+      <TabsContext.Provider value={{ activeTab, setActiveTab: handleTabChange }}>
         <div ref={ref} className={cn('w-full', className)} {...props}>
           {children}
         </div>
@@ -34,7 +42,7 @@ export const TabsList = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement
     <div
       ref={ref}
       className={cn(
-        'inline-flex h-9 items-center justify-center rounded-lg bg-neutral-900/50 p-1 text-neutral-500',
+        'inline-flex items-center gap-1 rounded-xl bg-white/[0.03] border border-white/[0.06] p-1 text-zinc-400 backdrop-blur-md shadow-inner',
         className
       )}
       {...props}
@@ -60,11 +68,11 @@ export const TabsTrigger = forwardRef<HTMLButtonElement, TabsTriggerProps>(
         type="button"
         onClick={() => setActiveTab(value)}
         className={cn(
-          'inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium transition-all',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 disabled:pointer-events-none disabled:opacity-50',
+          'inline-flex items-center justify-center whitespace-nowrap rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer select-none',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 disabled:pointer-events-none disabled:opacity-50',
           isActive
-            ? 'bg-neutral-800 text-neutral-100 shadow'
-            : 'hover:bg-neutral-800/50 hover:text-neutral-300',
+            ? 'bg-white/[0.1] text-white shadow-[0_1px_3px_rgba(0,0,0,0.4),inset_0_1px_0_0_rgba(255,255,255,0.15)] border border-white/[0.1]'
+            : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]',
           className
         )}
         {...props}
@@ -89,7 +97,7 @@ export const TabsContent = forwardRef<HTMLDivElement, TabsContentProps>(
     return (
       <div
         ref={ref}
-        className={cn('mt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700', className)}
+        className={cn('mt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 animate-in fade-in-50 duration-200', className)}
         {...props}
       />
     );

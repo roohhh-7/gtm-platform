@@ -6,6 +6,7 @@ import { CampaignTable } from '@/components/campaigns/CampaignTable';
 import { campaignService } from '@/services/campaigns';
 import { Campaign } from '@/types';
 import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 export default function CompaniesPage() {
   const router = useRouter();
@@ -59,9 +60,13 @@ export default function CompaniesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-white">Select a Campaign</h1>
-        <p className="text-neutral-400 mt-1">Choose a campaign to view and manage its companies spreadsheet.</p>
+      <div className="pb-2 border-b border-white/[0.06]">
+        <h1 className="text-2xl font-bold tracking-tight text-white bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-100 to-zinc-400">
+          Target Companies
+        </h1>
+        <p className="text-xs text-zinc-400 mt-1">
+          Select a campaign sequence to review and enrich account intelligence.
+        </p>
       </div>
       
       <CampaignFilters 
@@ -72,7 +77,10 @@ export default function CompaniesPage() {
       />
       
       {loading ? (
-        <div className="py-12 flex justify-center text-neutral-500">Loading campaigns...</div>
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-16 flex flex-col items-center justify-center gap-3 backdrop-blur-md">
+          <Loader2 className="h-6 w-6 text-indigo-400 animate-spin" />
+          <span className="text-xs text-zinc-400">Loading companies database...</span>
+        </div>
       ) : (
         <CampaignTable 
           campaigns={campaigns}
